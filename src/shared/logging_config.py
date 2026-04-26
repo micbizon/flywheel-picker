@@ -1,11 +1,13 @@
 import logging
 import os
+import threading
 import time
 from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 
 _LOG_FORMAT = "%(asctime)s %(levelname)-5s [%(name)s] %(message)s"
 _LOGS_DIR = Path(__file__).parent.parent.parent / "logs"
+_logger_lock = threading.Lock()
 _DECISIONS_DIR = _LOGS_DIR / "decisions"
 _DECISIONS_MAX_AGE_DAYS = 90
 
@@ -46,23 +48,17 @@ def get_decision_logger(ticker: str) -> logging.Logger:
     from datetime import date
 
     name = f"decisions.{date.today().isoformat()}_{ticker}"
-    logger = logging.getLogger(name)
-
-    if logger.handlers:
-        return logger
-
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False
-
-    _DECISIONS_DIR.mkdir(exist_ok=True)
-    from datetime import date as _date
-
-    filename = _DECISIONS_DIR / f"{_date.today().isoformat()}_{ticker}.log"
-    handler = logging.FileHandler(filename, encoding="utf-8")
-    handler.setFormatter(logging.Formatter(_LOG_FORMAT))
-    logger.addHandler(handler)
-
-    return logger
+    with _logger_lock:
+        log = logging.getLogger(name)
+        if not log.handlers:
+            log.setLevel(logging.DEBUG)
+            log.propagate = False
+            _DECISIONS_DIR.mkdir(exist_ok=True)
+            filename = _DECISIONS_DIR / f"{date.today().isoformat()}_{ticker}.log"
+            handler = logging.FileHandler(filename, encoding="utf-8")
+            handler.setFormatter(logging.Formatter(_LOG_FORMAT))
+            log.addHandler(handler)
+        return log
 
 
 def log_agent_result(ticker: str, agent_name: str, result: dict) -> None:

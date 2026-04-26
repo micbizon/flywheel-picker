@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-04-26 — Naprawa: race condition w get_decision_logger powodujący EMFILE w warstwie 4
+
+`get_decision_logger` miało klasyczny race condition typu check-then-act: wiele wątków jednocześnie widziało `logger.handlers == []` i każdy dodawał własny `FileHandler`. W warstwie 4 zagnieżdżone executory (4 tickery × 3 agenty × 3 instancje = 36 współbieżnych wątków) mnożyły FD per ticker, przekraczając limit OS. Naprawiono przez dodanie `_logger_lock = threading.Lock()` i owinięcie całej sekcji inicjalizacyjnej w `with _logger_lock:`.
+
+---
+
 ## 2026-04-25 — TASK-029: Dwa modele — Haiku dla analizy, Sonnet dla decyzji
 
 Wprowadzono dwupoziomowy routing modeli przez parametr `model_tier: "analysis" | "decision"` w `call_llm()` i `_call_claude()`. `get_llm_config()` w `config_loader.py` zwraca teraz dwa klucze modelu: `anthropic_model_analysis` (default: `claude-haiku-4-5-20251001`) i `anthropic_model_decision` (default: `claude-sonnet-4-6`). Usunięto stałą `_CLAUDE_MODEL`. Warstwy decyzyjne — 3 synthesizery w `layer4/agents.py`, `layer5/main.py`, `layer6/feedback_agent.py` — wywołują `call_llm(..., model_tier="decision")`; wszystkie agenty analizy (L1, L2, L4 instancje) pozostają na domyślnym `"analysis"`. Konfiguracja modeli przez `ANTHROPIC_MODEL_ANALYSIS` i `ANTHROPIC_MODEL_DECISION` w `.env`.
