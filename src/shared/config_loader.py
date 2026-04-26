@@ -79,9 +79,15 @@ def get_llm_config() -> dict:
         if not api_key:
             raise ValueError("USE_CLAUDE_API=true ale brak ANTHROPIC_API_KEY w .env")
         return {
-            "use_claude": use_claude,
-            "anthropic_api_key": os.getenv("ANTHROPIC_API_KEY"),
+            "use_claude": True,
+            "anthropic_api_key": api_key,
             "anthropic_temperature": float(os.getenv("ANTHROPIC_TEMPERATURE", "0.2")),
+            "anthropic_model_analysis": os.getenv(
+                "ANTHROPIC_MODEL_ANALYSIS", "claude-haiku-4-5-20251001"
+            ),
+            "anthropic_model_decision": os.getenv(
+                "ANTHROPIC_MODEL_DECISION", "claude-sonnet-4-6"
+            ),
         }
     return {
         "use_claude": use_claude,

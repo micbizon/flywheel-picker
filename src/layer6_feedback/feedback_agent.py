@@ -19,4 +19,4 @@ def run_feedback(decision: dict, current_data: dict, months: int) -> dict:
         )
         .replace("[MONTHS]", str(months))
     )
-    return call_llm(prompt)
+    return call_llm(prompt, model_tier="decision")

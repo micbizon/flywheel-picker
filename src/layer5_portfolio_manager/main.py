@@ -41,7 +41,7 @@ def run_portfolio_manager(ticker: str, layer2: dict, layer4: dict) -> dict:
     template = PROMPT_PATH.read_text(encoding="utf-8")
     prompt = template.replace("{{ FULL_CONTEXT }}", context)
 
-    pm_result = call_llm(prompt)
+    pm_result = call_llm(prompt, model_tier="decision")
     pm_result["ticker"] = ticker
 
     dec_log = get_decision_logger(ticker)

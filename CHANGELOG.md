@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-04-25 — TASK-029: Dwa modele — Haiku dla analizy, Sonnet dla decyzji
+
+Wprowadzono dwupoziomowy routing modeli przez parametr `model_tier: "analysis" | "decision"` w `call_llm()` i `_call_claude()`. `get_llm_config()` w `config_loader.py` zwraca teraz dwa klucze modelu: `anthropic_model_analysis` (default: `claude-haiku-4-5-20251001`) i `anthropic_model_decision` (default: `claude-sonnet-4-6`). Usunięto stałą `_CLAUDE_MODEL`. Warstwy decyzyjne — 3 synthesizery w `layer4/agents.py`, `layer5/main.py`, `layer6/feedback_agent.py` — wywołują `call_llm(..., model_tier="decision")`; wszystkie agenty analizy (L1, L2, L4 instancje) pozostają na domyślnym `"analysis"`. Konfiguracja modeli przez `ANTHROPIC_MODEL_ANALYSIS` i `ANTHROPIC_MODEL_DECISION` w `.env`.
+
+---
+
 ## 2026-04-25 — Naprawa: SyncHttpxClientWrapper AttributeError przy zamknięciu
 
 `_call_claude` tworzył nowy `anthropic.Anthropic(...)` przy każdym wywołaniu — przy zamknięciu interpretera Python 3.14 GC niszczył obiekt w momencie gdy `httpx.Client._state` był już niedostępny, generując `AttributeError` w `__del__`. Wprowadzono singleton `_claude_client` inicjalizowany przez `_get_claude_client(cfg)` przy pierwszym wywołaniu i reużywany przez cały czas życia procesu.

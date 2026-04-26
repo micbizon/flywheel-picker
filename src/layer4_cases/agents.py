@@ -93,7 +93,7 @@ def _run_bull_synthesizer(ticker: str, analyses: list[dict]) -> dict:
     prompt = _load_synthesizer_prompt(
         "04a_bull_synthesizer.md", ticker, analyses_json, n
     )
-    result = call_llm(prompt)
+    result = call_llm(prompt, model_tier="decision")
     result["ticker"] = ticker
     log_agent_result(ticker, "bull_synthesizer", result)
     return result
@@ -105,7 +105,7 @@ def _run_bear_synthesizer(ticker: str, analyses: list[dict]) -> dict:
     prompt = _load_synthesizer_prompt(
         "04b_bear_synthesizer.md", ticker, analyses_json, n
     )
-    result = call_llm(prompt)
+    result = call_llm(prompt, model_tier="decision")
     result["ticker"] = ticker
     log_agent_result(ticker, "bear_synthesizer", result)
     return result
@@ -117,7 +117,7 @@ def _run_premortem_synthesizer(ticker: str, analyses: list[dict]) -> dict:
     prompt = _load_synthesizer_prompt(
         "04c_premortem_synthesizer.md", ticker, analyses_json, n
     )
-    result = call_llm(prompt)
+    result = call_llm(prompt, model_tier="decision")
     result["ticker"] = ticker
     log_agent_result(ticker, "premortem_synthesizer", result)
     return result
