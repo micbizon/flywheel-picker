@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from layer1_prescreener.main import run_prescreener_batch
@@ -25,9 +26,14 @@ def _call_with_retry(fn, *args, max_retries: int = None, **kwargs):
         try:
             return fn(*args, **kwargs)
         except Exception as e:
-            logger.warning(f"Próba {attempt}/{max_retries} nieudana: {e}")
             if attempt == max_retries:
+                logger.warning(f"Próba {attempt}/{max_retries} nieudana: {e}")
                 raise
+            wait = 2 ** (attempt - 1)
+            logger.warning(
+                f"Próba {attempt}/{max_retries} nieudana: {e} — retry za {wait}s"
+            )
+            time.sleep(wait)
 
 
 def run_pipeline(tickers: list[str] | None = None) -> None:

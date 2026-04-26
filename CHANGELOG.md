@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-04-26 — Exponential backoff w retry pipeline
+
+W `_call_with_retry` w `orchestrator.py` dodano opóźnienie między próbami: `wait = 2 ** (attempt - 1)` sekund (próba 1 → 1s, próba 2 → 2s, ostatnia próba → rzuca wyjątek bez czekania). Natychmiastowy retry był bezużyteczny przy chwilowych błędach sieciowych i DNS — kolejna próba trafiała na ten sam problem.
+
+---
+
 ## 2026-04-26 — Naprawa: race condition w get_decision_logger powodujący EMFILE w warstwie 4
 
 `get_decision_logger` miało klasyczny race condition typu check-then-act: wiele wątków jednocześnie widziało `logger.handlers == []` i każdy dodawał własny `FileHandler`. W warstwie 4 zagnieżdżone executory (4 tickery × 3 agenty × 3 instancje = 36 współbieżnych wątków) mnożyły FD per ticker, przekraczając limit OS. Naprawiono przez dodanie `_logger_lock = threading.Lock()` i owinięcie całej sekcji inicjalizacyjnej w `with _logger_lock:`.
