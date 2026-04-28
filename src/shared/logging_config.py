@@ -12,6 +12,13 @@ _DECISIONS_DIR = _LOGS_DIR / "decisions"
 _DECISIONS_MAX_AGE_DAYS = 90
 
 
+def _cleanup_old_decisions() -> None:
+    cutoff = time.time() - (_DECISIONS_MAX_AGE_DAYS * 24 * 3600)
+    for f in _DECISIONS_DIR.glob("*.log"):
+        if f.stat().st_mtime < cutoff:
+            f.unlink()
+
+
 def setup_logging() -> None:
     level_name = os.getenv("LOG_LEVEL", "INFO").upper()
     level = getattr(logging, level_name, logging.INFO)
@@ -56,6 +63,7 @@ def get_decision_logger(ticker: str) -> logging.Logger:
             _DECISIONS_DIR.mkdir(exist_ok=True)
             filename = _DECISIONS_DIR / f"{date.today().isoformat()}_{ticker}.log"
             handler = logging.FileHandler(filename, encoding="utf-8")
+            handler.setLevel(logging.DEBUG)
             handler.setFormatter(logging.Formatter(_LOG_FORMAT))
             log.addHandler(handler)
         return log
@@ -77,10 +85,3 @@ def close_decision_logger(ticker: str) -> None:
     for handler in log.handlers[:]:
         handler.close()
         log.removeHandler(handler)
-
-
-def _cleanup_old_decisions() -> None:
-    cutoff = time.time() - (_DECISIONS_MAX_AGE_DAYS * 24 * 3600)
-    for f in _DECISIONS_DIR.glob("*.log"):
-        if f.stat().st_mtime < cutoff:
-            f.unlink()

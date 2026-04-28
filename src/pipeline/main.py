@@ -30,6 +30,11 @@ def main() -> None:
         action="store_true",
         help="Uruchom tylko feedback loop (warstwa 6)",
     )
+    parser.add_argument(
+        "--portfolio-manager",
+        action="store_true",
+        help="Uruchom również warstwę 5: Portfolio Manager",
+    )
     args = parser.parse_args()
 
     if args.discover:
@@ -37,9 +42,9 @@ def main() -> None:
     elif args.feedback:
         run_feedback_loop()
     elif args.tickers:
-        run_pipeline(tickers=args.tickers)
+        run_pipeline(tickers=args.tickers, run_l5=args.portfolio_manager)
     else:
-        run_pipeline()
+        run_pipeline(run_l5=args.portfolio_manager)
 
 
 if __name__ == "__main__":

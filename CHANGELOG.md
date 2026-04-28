@@ -1,4 +1,56 @@
-# Changelog
+# Changelog - all entries are generated
+
+## 2026-04-28 — TASK-034: Skrócenie kontekstu per ticker w build_batch_context
+
+W `context_builder_batch.py` zastąpiono `_candidate_section` (przekazywała pełny `json.dumps` L2 i L4 per ticker) nową funkcją `_format_ticker_context` — wyciąga tylko kluczowe pola: z L2 `fundamental.summary/key_strengths/key_risks` i `technical.summary/entry_zone/invalidation_level`; z L4 `bull.core_thesis/flywheel_mechanism/upside_x/price_target_3yr/key_assumptions`, `bear.central_thesis/top_risk/stress_test/what_would_change_mind`, `premortem.failure_scenarios[:2]`. Pomijane: `raw_analysis` wszystkich agentów, `historical_analogs`, więcej niż 2 scenariusze premortem. `build_batch_context` zaktualizowany do wywołania nowej funkcji. W `batch.py` naprawiono dwa blokujące błędy: usunięto `quit()` pozostawiony z debugowania i zmieniono `model_tier="decision"` → `"portfolio_manager"`; `logger.debug` dla długości promptu zmieniony na `logger.info` żeby trafił do `pipeline.log`.
+
+---
+
+## 2026-04-28
+
+**Rename projektu i zakres kapitalizacji:** `README.md`, `ARCHITECTURE.md` i prompt `02a_fundamental.md` zaktualizowane — projekt przemianowany z `small-cap-picker` na `flywheel-picker`, zakres kapitalizacji zmieniony z `$1B–$100B` na `$2B+`.
+
+**Flaga `--portfolio-manager` i opcjonalna warstwa 5:** W `pipeline/main.py` dodano `--portfolio-manager`; `run_pipeline()` w `orchestrator.py` przyjmuje `run_l5: bool = False` — warstwa 5 nie uruchamia się domyślnie, tylko gdy przekazana flaga. `_TOP_N_FOR_PM` zwiększone z 5 do 15 kandydatów.
+
+**Retry: wykrywanie błędów sieci z resetem klienta:** W `_call_with_retry` w `orchestrator.py` dodano detekcję `ConnectionError`/`ConnectError` — przy błędzie sieciowym wywoływane `reset_claude_client()` (nowa funkcja w `llm_client.py` zerująca singleton `_claude_client`). Wait zmieniony z `2^(attempt-1)` na `60 * attempt` sekund (attempt 1→60s, 2→120s). Naprawiono indeksowanie: `range(max_retries + 1)` zamiast `range(1, max_retries + 1)`.
+
+**Timeouty HTTP dla klienta Anthropic:** `_get_claude_client` tworzy klienta z `httpx.Timeout(connect=30s, read=600s, write=600s, pool=600s)` — poprzedni brak timeout powodował zawieszanie się przy długich wywołaniach PM.
+
+**Filtrowanie watchlist przez `available-tickers.pdf`:** W `config_loader.py` dodano `_load_available_tickers()` — jeśli plik `data/available-tickers.pdf` istnieje, `load_watchlist()` filtruje ticki do tych dostępnych na giełdzie US. Parsowanie PDF przez `pypdf` (nowa zależność w `pyproject.toml`), wzorzec `r"\b[A-Z]{1,6}:US\b"`. Plik PDF dodany do `.gitignore`.
+
+**Zmiana routingu modeli: `decision` → `portfolio_manager`:** Env var `ANTHROPIC_MODEL_DECISION` przemianowana na `ANTHROPIC_MODEL_PORTFOLIO_MANAGER`; `model_tier="decision"` → `"portfolio_manager"` w `llm_client.py` i `batch.py`. `max_tokens` podniesione do 8192 dla wywołań PM (wszystkie inne nadal 4096).
+
+**Uproszczenie schematów bull/bear synthesizer:** `04a_bull_synthesizer.md` — usunięto `score`, `historical_analogs`, `consensus_strength`; dodano `upside_x` i zmieniono opisy pól na instrukcje z limitami. `04b_bear_synthesizer.md` — uproszczono do 4 pól: `central_thesis`, `top_risk`, `stress_test`, `what_would_change_mind`; usunięto `score`, `key_risks`, `consensus_strength` i pola ryzyk szczegółowych.
+
+**Uproszczenie promptu portfolio managera:** `05_portfolio_manager.md` — matryca 7-polowa (KROK 1–2) zastąpiona 3 pytaniami jakościowymi (flywheel mechaniczny? upside >2x? bull silniejszy niż bear?); skrócono zasady do minimum; PM nadal zwraca listę decyzji dla wszystkich kandydatów naraz.
+
+**Aktualizacja danych:** `data/watchlist.yaml` wypełniona 65 tickerami z screenera (25 kwiecień) i ręcznie dodanymi (AMD, ASTS, INTC, RKLB, TXN). `data/portfolio.yaml` — usunięta pozycja RDW, COST zmniejszony z 20% do 10%, gotówka zwiększona z 60% do 80%.
+
+---
+
+## 2026-04-26 — TASK-033: Portfolio manager jako decyzja portfelowa — wszystkie ticki naraz
+
+Stworzono `src/layer5_portfolio_manager/context_builder_batch.py` z `build_batch_context(candidates, portfolio)` — buduje jeden kontekst dla wszystkich kandydatów z sekcjami: aktualny portfel, P&L per pozycja, poprzednie decyzje z feedbackiem, system insights, dane L2 i L4 per ticker. Stworzono `src/layer5_portfolio_manager/batch.py` z `run_portfolio_manager_batch(candidates, portfolio)` — jedno wywołanie LLM zwraca listę decyzji dla wszystkich kandydatów jednocześnie; zapisuje do `decisions_log` tylko akcje nie-PASS. Zaktualizowano prompt `05_portfolio_manager.md` — PM otrzymuje wszystkich kandydatów naraz, szereguje wg conviction (bull_score - bear_score) i alokuje gotówkę od najwyższego; output zmieniony z pojedynczego obiektu na listę. W `orchestrator.py` warstwa L5 zamieniona z pętli per-ticker na budowanie listy `candidates` + jedno wywołanie `run_portfolio_manager_batch`; wyniki zapisywane przez `save_checkpoint(run_id, "l5", ...)` (checkpoint per warstwa, nie per ticker). `_safe_parse_json` rozszerzony o obsługę `list` — detekcja przez pierwszy znak JSON (`{` vs `[`). Deduplikacja P&L: `get_pnl_pct(ticker, entry_price)` przeniesione do `shared/market_data.py` i używane w `context_builder.py` i `orchestrator.py` zamiast inline kalkulacji.
+
+---
+
+## 2026-04-27 — TASK-032: Kumulatywny checkpoint dzienny z automatycznym czyszczeniem
+
+Usunięto `clear_checkpoint(run_id)` z końca `run_pipeline()` — checkpoint teraz żyje cały dzień i kumuluje wyniki kolejnych uruchomień (nowe ticki dopisują się do istniejących). Dodano `cleanup_old_checkpoints(max_age_days=2)` w `checkpoint.py` (wymaga `import time` i `logging.getLogger`) — skanuje `CHECKPOINT_DIR/*.json` i usuwa pliki starsze niż 2 dni. Wywoływana jako pierwsza instrukcja `run_pipeline()`.
+
+---
+
+## 2026-04-27 — TASK-031: Checkpoint per ticker w warstwach 2, 4 i 5
+
+Do `checkpoint.py` dodano `save_ticker_result`, `get_ticker_result` i `get_completed_tickers` — checkpoint przechowuje wyniki per ticker jako `{stage: {ticker: data}}`. W `orchestrator.py` warstwy L2 i L4 zamieniono z `ThreadPoolExecutor` na sekwencyjne pętle (wewnętrzna równoległość agentów zachowana w `run_parallel_analysis` i `run_cases`): na starcie ładowane są już ukończone ticki z checkpointu, każdy nowy wynik zapisywany natychmiast po zakończeniu. L5 analogicznie — `save_ticker_result` po sukcesie PM agenta, `finally: close_decision_logger`. L1 i L3 pozostają na checkpoint per warstwa. `clear_checkpoint` wywoływany tylko po pełnym sukcesie pipeline.
+
+---
+
+## 2026-04-26 — TASK-030: Checkpointy pipeline — wznawianie po błędzie
+
+Stworzono `src/pipeline/checkpoint.py` z funkcjami `save_checkpoint`, `load_checkpoint`, `clear_checkpoint` i `today_run_id` — dane zapisywane do `logs/checkpoints/YYYY-MM-DD.json` (jeden plik per dzień, etapy jako klucze JSON). W `orchestrator.py` każda warstwa (L1–L4) owinięta w `if "lN" in cp: wczytaj else: przelicz + save_checkpoint`; `close_decision_logger` wywoływany tylko w gałęzi `else` (przy wczytaniu z cache loggery nie były otwarte); po sukcesie L5 `clear_checkpoint` usuwa plik. Uruchomienie po błędzie w warstwie 4 pomija L1–L3 i wznawia od L4.
+
+---
 
 ## 2026-04-26 — Exponential backoff w retry pipeline
 

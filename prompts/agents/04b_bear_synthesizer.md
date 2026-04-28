@@ -25,20 +25,12 @@ Zwróć wyłącznie JSON:
 {
   "ticker": "",
   "agent": "bear",
-  "score": 0,
-  "central_bear_thesis": "",
-  "top_competitive_threat": "",
-  "financial_stress_result": "",
-  "macro_sensitivity": "",
-  "exit_liquidity_risk": "LOW|MEDIUM|HIGH",
-  "what_would_change_mind": "",
-  "key_risks": [],
-  "consensus_strength": "HIGH|MEDIUM|LOW",
-  "raw_analysis": "MAX 150 słów. Synthesizer może być bardziej rozbudowany."
+  "central_thesis": "2 zdania — najsilniejszy argument bear.",
+  "top_risk": "1 zdanie — największe ryzyko strukturalne.",
+  "stress_test": "np. Rev -50%: GM→52%, FCF→-$80M",
+  "what_would_change_mind": "1 zdanie — konkretny sygnał obalający bear.",
+  "raw_analysis": "MAX 150 słów — syntetyczny bear case."
 }
 
 Zasady wypełnienia:
-- score: średnia ważona (konsensus liczy 2x, unikalne 0.5x)
-- key_risks: tylko te z sekcji KONSENSUS
-- consensus_strength: "HIGH" jeśli spread score'ów <=2, "MEDIUM" jeśli <=4, "LOW" jeśli >4
 - raw_analysis: narracja z kroku 4 (SYNTETYCZNY BEAR CASE)

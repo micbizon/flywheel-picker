@@ -11,4 +11,4 @@ Spółka przechodzi ocenę jeśli spełnia minimum 3 z 5 kryteriów:
 Odrzucamy: spółki tanie bez flywheel'u, margin expansion plays,
 koncentrację > 30% przychodów u jednego klienta, wzrost bez ścieżki do unit economics.
 
-Asymetria wymagana: potencjał minimum 2x w horyzoncie 5 lat przy scenariuszu bazowym.
+Asymetria wymagana: potencjał minimum 1.5x w horyzoncie 5 lat przy scenariuszu bazowym.

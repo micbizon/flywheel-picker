@@ -25,20 +25,16 @@ Zwróć wyłącznie JSON:
 {
   "ticker": "",
   "agent": "bull",
-  "score": 0,
-  "core_thesis": "",
-  "flywheel_mechanism": "",
-  "underappreciated_factor": "",
-  "historical_analogs": [],
+  "core_thesis": "2 zdania — najsilniejszy argument bull.",
+  "flywheel_mechanism": "1 zdanie — mechanizm wzrostu.",
+  "key_assumptions": ["max 3, każde falsifiable z progiem"],
   "price_target_3yr": 0,
-  "key_assumptions": [],
-  "consensus_strength": "HIGH|MEDIUM|LOW",
-  "raw_analysis": "MAX 150 słów. Synthesizer może być bardziej rozbudowany."
+  "upside_x": 0.0,
+  "underappreciated_factor": "",
+  "raw_analysis": "MAX 150 słów — syntetyczny bull case."
 }
 
 Zasady wypełnienia:
-- score: średnia ważona (konsensus liczy 2x, unikalne 0.5x)
 - key_assumptions: tylko te z sekcji KONSENSUS
 - underappreciated_factor: najlepszy sygnał z UNIKALNE SYGNAŁY oznaczony WARTO_ZBADAĆ (lub null jeśli brak)
-- consensus_strength: "HIGH" jeśli spread score'ów <=2, "MEDIUM" jeśli <=4, "LOW" jeśli >4
 - raw_analysis: narracja z kroku 4 (SYNTETYCZNY BULL CASE)

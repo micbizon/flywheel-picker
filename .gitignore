@@ -39,4 +39,7 @@ Thumbs.db
 
 # Logs
 logs/
+
+# Selected Data
 data/decisions_log_test.yaml
+data/available-tickers.pdf

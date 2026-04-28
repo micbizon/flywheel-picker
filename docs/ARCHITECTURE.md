@@ -7,7 +7,7 @@ kapitalizacji — obszaru gdzie duże fundusze instytucjonalne nie mogą efektyw
 Decyzje inwestycyjne oparte o framework "Costco Algorithm": spółki z flywheel'em reinwestującym
 korzyści skali w niższe ceny / wyższą wartość dla klienta końcowego.
 
-**Zakres kapitalizacji:** $1B – $100B (small/mid/large-cap)  
+**Zakres kapitalizacji:** $2B+(mid+ cap)  
 **Horyzont inwestycyjny:** 3–10 lat per pozycja  
 **Liczba pozycji:** 3–7 jednocześnie  
 **Filozofia:** concentrated, high-conviction, long-only
@@ -216,7 +216,7 @@ feedback_12m: null
 ## Źródła pomysłów na spółki (Warstwa 0)
 
 **Zaimplementowane:**
-- Finviz: market cap $1B – $100B, revenue growth YoY > 15%, insider ownership > 10%
+- Finviz: market cap $2B+, revenue growth YoY > 15%, insider ownership > 10%
 - OpenInsider: insider buying CEO/CFO (aktualnie stub — endpoint niedostępny)
 
 **Planowane:**

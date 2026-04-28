@@ -13,6 +13,15 @@ def get_current_price(ticker: str) -> float | None:
         return None
 
 
+def get_pnl_pct(ticker: str, entry_price: float) -> float | None:
+    if not entry_price:
+        return None
+    current_price = get_current_price(ticker)
+    if current_price is None:
+        return None
+    return (current_price - entry_price) / entry_price * 100
+
+
 def get_price_context(ticker: str) -> str:
     try:
         stock = yf.Ticker(ticker)

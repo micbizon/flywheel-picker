@@ -5,7 +5,7 @@ from shared.config_loader import (
     load_portfolio,
     load_system_insights,
 )
-from shared.market_data import get_current_price, get_price_context
+from shared.market_data import get_pnl_pct, get_price_context
 
 
 def _portfolio_state_section(portfolio: dict, price_ctx: str = "") -> str:
@@ -30,10 +30,9 @@ def _position_section(ticker: str, portfolio: dict) -> str:
         entry_price = position.get("entry_price", 0)
         position_context = f"POZYCJA W PORTFELU: TAK\nAktualny rozmiar: {size}%"
 
-        current_price = get_current_price(ticker)
-        if current_price:
-            pnl_pct = (current_price - entry_price) / entry_price * 100
-            position_context += f"\nP&L od wejścia: {pnl_pct:+.1f}% (entry ${entry_price:.2f} → current ${current_price:.2f})"
+        pnl_pct = get_pnl_pct(ticker, entry_price)
+        if pnl_pct is not None:
+            position_context += f"\nP&L od wejścia: {pnl_pct:+.1f}%"
         return position_context
     return "POZYCJA W PORTFELU: NIE\nAktualny rozmiar: brak pozycji"
 

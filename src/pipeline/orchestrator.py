@@ -1,18 +1,29 @@
 import logging
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from layer1_prescreener.main import run_prescreener_batch
 from layer2_analysis.main import run_parallel_analysis
 from layer3_selector.main import run_selector
 from layer4_cases.main import run_cases
-from layer5_portfolio_manager.main import run_portfolio_manager
-from shared.config_loader import get_max_workers, load_portfolio, load_watchlist
+from layer5_portfolio_manager.batch import run_portfolio_manager_batch
+from pipeline.checkpoint import (
+    cleanup_old_checkpoints,
+    get_completed_tickers,
+    get_ticker_result,
+    load_checkpoint,
+    save_checkpoint,
+    save_ticker_result,
+    today_run_id,
+)
+from shared.config_loader import load_portfolio, load_watchlist
+from shared.llm_client import reset_claude_client
+from shared.logging_config import close_decision_logger
+from shared.market_data import get_pnl_pct
 
 logger = logging.getLogger(__name__)
 
-_TOP_N_FOR_PM = 5
+_TOP_N_FOR_PM = 15
 
 
 def _log(step: str, entered: int, exited: int) -> None:
@@ -22,21 +33,32 @@ def _log(step: str, entered: int, exited: int) -> None:
 def _call_with_retry(fn, *args, max_retries: int = None, **kwargs):
     if max_retries is None:
         max_retries = int(os.getenv("LLM_MAX_RETRIES", "3"))
-    for attempt in range(1, max_retries + 1):
+    for attempt in range(max_retries + 1):
         try:
             return fn(*args, **kwargs)
         except Exception as e:
             if attempt == max_retries:
-                logger.warning(f"Próba {attempt}/{max_retries} nieudana: {e}")
                 raise
-            wait = 2 ** (attempt - 1)
+            is_connection = "Connection error" in str(e) or "ConnectError" in str(e)
+            if is_connection:
+                reset_claude_client()
+                logger.warning("Błąd sieci — klient zresetowany.")
+            wait = 60 * attempt
             logger.warning(
-                f"Próba {attempt}/{max_retries} nieudana: {e} — retry za {wait}s"
+                f"Próba {attempt + 1}/{max_retries} nieudana: {e} — retry za {wait}s"
             )
             time.sleep(wait)
 
 
-def run_pipeline(tickers: list[str] | None = None) -> None:
+def run_pipeline(tickers: list[str] | None = None, run_l5: bool = False) -> None:
+    cleanup_old_checkpoints()
+    run_id = today_run_id()
+    cp = load_checkpoint(run_id)
+    if cp:
+        logger.info(
+            f"Wznawianie pipeline z checkpointu {run_id}: dostępne etapy: {list(cp.keys())}"
+        )
+
     if tickers is None:
         watchlist = load_watchlist()
         tickers = (
@@ -58,7 +80,12 @@ def run_pipeline(tickers: list[str] | None = None) -> None:
         logger.info(f"Ticki w obu miejscach (watchlist + portfolio): {overlap}")
 
     logger.info(f"--- Warstwa 1: Pre-screener ({len(non_portfolio)} tickerów) ---")
-    passing = run_prescreener_batch(non_portfolio)
+    if "l1" in cp:
+        passing = cp["l1"]["passing"]
+        logger.info("L1: wczytano z checkpointu")
+    else:
+        passing = run_prescreener_batch(non_portfolio)
+        save_checkpoint(run_id, "l1", {"passing": passing})
     passing_tickers = [r["ticker"] for r in passing]
     _log("L1 prescreener", len(non_portfolio), len(passing_tickers))
 
@@ -71,65 +98,90 @@ def run_pipeline(tickers: list[str] | None = None) -> None:
     logger.info(
         f"--- Warstwa 2: Analiza równoległa ({len(layer2_tickers)} tickerów) ---"
     )
-
-    layer2_results: dict[str, dict] = {}
-    with ThreadPoolExecutor(
-        max_workers=min(len(layer2_tickers), get_max_workers())
-    ) as ex:
-        futures = {
-            ex.submit(_call_with_retry, run_parallel_analysis, t): t
-            for t in layer2_tickers
-        }
-        for future in as_completed(futures):
-            ticker = futures[future]
-            layer2_results[ticker] = future.result()
+    completed_l2 = get_completed_tickers(run_id, "l2")
+    layer2_results: dict[str, dict] = {
+        t: get_ticker_result(run_id, "l2", t) for t in completed_l2
+    }
+    for ticker in layer2_tickers:
+        if ticker in completed_l2:
+            logger.info(f"L2 {ticker}: wczytano z checkpointu")
+            continue
+        result = _call_with_retry(run_parallel_analysis, ticker)
+        layer2_results[ticker] = result
+        save_ticker_result(run_id, "l2", ticker, result)
+        close_decision_logger(ticker)
     _log("L2 analiza", len(layer2_tickers), len(layer2_results))
 
     logger.info("--- Warstwa 3: Selektor ---")
-    analyses = list(layer2_results.values())
-    selected = run_selector(analyses)
-    _log("L3 selektor", len(analyses), len(selected))
+    if "l3" in cp:
+        selected = cp["l3"]
+        logger.info("L3: wczytano z checkpointu")
+    else:
+        selected = run_selector(list(layer2_results.values()))
+        save_checkpoint(run_id, "l3", selected)
+    _log("L3 selektor", len(layer2_results), len(selected))
 
     logger.info(f"--- Warstwa 4: Bull/Bear/Pre-Mortem ({len(selected)} tickerów) ---")
-    layer4_results: dict[str, dict] = {}
-    with ThreadPoolExecutor(max_workers=min(len(selected), get_max_workers())) as ex:
-        futures = {
-            ex.submit(
-                _call_with_retry, run_cases, entry["ticker"], entry["analysis"]
-            ): entry["ticker"]
-            for entry in selected
-        }
-        for future in as_completed(futures):
-            ticker = futures[future]
-            layer4_results[ticker] = future.result()
+    completed_l4 = get_completed_tickers(run_id, "l4")
+    layer4_results: dict[str, dict] = {
+        t: get_ticker_result(run_id, "l4", t) for t in completed_l4
+    }
+    for entry in selected:
+        ticker = entry["ticker"]
+        if ticker in completed_l4:
+            logger.info(f"L4 {ticker}: wczytano z checkpointu")
+            continue
+        result = _call_with_retry(run_cases, ticker, entry["analysis"])
+        layer4_results[ticker] = result
+        save_ticker_result(run_id, "l4", ticker, result)
+        close_decision_logger(ticker)
     _log("L4 cases", len(selected), len(layer4_results))
 
     missing_pm = [t for t in in_portfolio if t not in layer4_results]
     if missing_pm:
         logger.error(f"BŁĄD: ticki z portfolio nie trafiły do warstwy 4: {missing_pm}")
 
-    top5_tickers = [e["ticker"] for e in selected if not e["in_portfolio"]][
+    top_n_tickers = [e["ticker"] for e in selected if not e["in_portfolio"]][
         :_TOP_N_FOR_PM
     ]
-    pm_tickers = list(dict.fromkeys(top5_tickers + in_portfolio))
+    pm_tickers = list(dict.fromkeys(top_n_tickers + in_portfolio))
+
+    if not run_l5:
+        logger.info(
+            "--- Warstwa 5: Portfolio Manager pominięta (użyj --portfolio-manager) ---"
+        )
+        logger.info("--- Pipeline zakończony pomyślnie ---")
+        return
 
     logger.info(f"--- Warstwa 5: Portfolio Manager ({len(pm_tickers)} tickerów) ---")
+    portfolio_positions = {p["ticker"]: p for p in portfolio.get("positions", [])}
+    candidates = []
     for ticker in pm_tickers:
-        l2 = layer2_results.get(ticker, {})
-        l4 = layer4_results.get(ticker, {})
-        try:
-            result = _call_with_retry(run_portfolio_manager, ticker, l2, l4)
-            logger.info(
-                f"  {ticker}: {result.get('action', '?')} "
-                f"(current={result.get('current_position_size_pct', '?')}% "
-                f"→ target={result.get('target_position_size_pct', '?')}%)"
-            )
-        except ValueError as e:
-            logger.error(f"  {ticker}: BŁĄD parsowania JSON — pomijam ({e})")
-            continue
-        except Exception as e:
-            logger.error(f"  {ticker}: NIEOCZEKIWANY BŁĄD — pomijam ({e})")
-            continue
-    _log("L5 portfolio manager", len(pm_tickers), len(pm_tickers))
+        position = portfolio_positions.get(ticker)
+        in_portfolio_flag = position is not None
+        candidate = {
+            "ticker": ticker,
+            "in_portfolio": in_portfolio_flag,
+            "current_size": position.get("current_weight_pct", 0) if position else 0,
+            "pnl_pct": get_pnl_pct(ticker, position.get("entry_price", 0))
+            if position
+            else None,
+            "l2": layer2_results.get(ticker, {}),
+            "l4": layer4_results.get(ticker, {}),
+        }
+        candidates.append(candidate)
 
-    logger.info("--- Pipeline zakończony ---")
+    results = _call_with_retry(run_portfolio_manager_batch, candidates, portfolio)
+    l5_results = {r["ticker"]: r for r in results}
+    for ticker in pm_tickers:
+        close_decision_logger(ticker)
+
+    for ticker, result in l5_results.items():
+        logger.info(
+            f"  {ticker}: {result.get('action', '?')} "
+            f"(current={result.get('current_position_size_pct', '?')}% "
+            f"→ target={result.get('target_position_size_pct', '?')}%)"
+        )
+    _log("L5 portfolio manager", len(pm_tickers), len(l5_results))
+
+    logger.info("--- Pipeline zakończony pomyślnie ---")

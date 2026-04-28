@@ -1,6 +1,6 @@
-# small-cap-picker
+# flywheel-picker
 
-Multi-agentowy pipeline do identyfikacji i analizy spółek small/mid-cap ($1B–$100B market cap).
+Multi-agentowy pipeline do identyfikacji i analizy spółek z kapitalizacją $2bln+.
 
 **Filozofia:** Concentrated, high-conviction, long-only. Skupiony na spółkach z "Costco flywheel" — ekonomia skali reinwestowana w niższe ceny / wyższą wartość dla klienta zamiast ekspansji marż. 3–7 pozycji, horyzont 3–10 lat.
 

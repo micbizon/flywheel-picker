@@ -1,7 +1,7 @@
 {{ CORE_RULES }}
 {{ FINANCIAL_CONTEXT }}
 
-Analizuj [TICKER] przez lens flywheel'u. Spółki $1B-$100B.
+Analizuj [TICKER] przez lens flywheel'u. Spółki powyej $2B.
 
 Zwróć wyłącznie JSON:
 {
