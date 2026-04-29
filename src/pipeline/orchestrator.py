@@ -23,7 +23,7 @@ from shared.market_data import get_pnl_pct
 
 logger = logging.getLogger(__name__)
 
-_TOP_N_FOR_PM = 15
+_TOP_N_FOR_PM = 30
 
 
 def _log(step: str, entered: int, exited: int) -> None:
@@ -80,14 +80,31 @@ def run_pipeline(tickers: list[str] | None = None, run_l5: bool = False) -> None
         logger.info(f"Ticki w obu miejscach (watchlist + portfolio): {overlap}")
 
     logger.info(f"--- Warstwa 1: Pre-screener ({len(non_portfolio)} tickerów) ---")
-    if "l1" in cp:
-        passing = cp["l1"]["passing"]
-        logger.info("L1: wczytano z checkpointu")
-    else:
-        passing = run_prescreener_batch(non_portfolio)
-        save_checkpoint(run_id, "l1", {"passing": passing})
+    completed_l1 = get_completed_tickers(run_id, "l1")
+    l1_results: dict[str, dict | None] = {}
+    valid_completed_l1: set[str] = set()
+    for t in completed_l1:
+        result = get_ticker_result(run_id, "l1", t)
+        if isinstance(result, dict) or result is None:
+            l1_results[t] = result
+            valid_completed_l1.add(t)
+            logger.info(f"L1 {t}: wczytano z checkpointu")
+
+    remaining_l1 = [t for t in non_portfolio if t not in valid_completed_l1]
+    if remaining_l1:
+        new_passing = _call_with_retry(run_prescreener_batch, remaining_l1)
+        new_passing_map = {r["ticker"]: r for r in new_passing}
+        for ticker in remaining_l1:
+            result = new_passing_map.get(ticker)
+            l1_results[ticker] = result
+            save_ticker_result(run_id, "l1", ticker, result)
+
+    passing = [r for r in l1_results.values() if r is not None]
     passing_tickers = [r["ticker"] for r in passing]
     _log("L1 prescreener", len(non_portfolio), len(passing_tickers))
+    logger.info(f"  przeszły: {sorted(passing_tickers)}")
+    if dropped_l1 := sorted(set(non_portfolio) - set(passing_tickers)):
+        logger.info(f"  odpadły:  {dropped_l1}")
 
     layer2_tickers = list(dict.fromkeys(passing_tickers + in_portfolio))
 
@@ -111,15 +128,16 @@ def run_pipeline(tickers: list[str] | None = None, run_l5: bool = False) -> None
         save_ticker_result(run_id, "l2", ticker, result)
         close_decision_logger(ticker)
     _log("L2 analiza", len(layer2_tickers), len(layer2_results))
+    logger.info(f"  wyjście: {sorted(layer2_results)}")
 
     logger.info("--- Warstwa 3: Selektor ---")
-    if "l3" in cp:
-        selected = cp["l3"]
-        logger.info("L3: wczytano z checkpointu")
-    else:
-        selected = run_selector(list(layer2_results.values()))
-        save_checkpoint(run_id, "l3", selected)
+    selected = run_selector(list(layer2_results.values()))
+    save_checkpoint(run_id, "l3", selected)
     _log("L3 selektor", len(layer2_results), len(selected))
+    selected_tickers = sorted(e["ticker"] for e in selected)
+    logger.info(f"  przeszły: {selected_tickers}")
+    if dropped_l3 := sorted(set(layer2_results) - set(selected_tickers)):
+        logger.info(f"  odpadły:  {dropped_l3}")
 
     logger.info(f"--- Warstwa 4: Bull/Bear/Pre-Mortem ({len(selected)} tickerów) ---")
     completed_l4 = get_completed_tickers(run_id, "l4")
@@ -136,6 +154,7 @@ def run_pipeline(tickers: list[str] | None = None, run_l5: bool = False) -> None
         save_ticker_result(run_id, "l4", ticker, result)
         close_decision_logger(ticker)
     _log("L4 cases", len(selected), len(layer4_results))
+    logger.info(f"  wyjście: {sorted(layer4_results)}")
 
     missing_pm = [t for t in in_portfolio if t not in layer4_results]
     if missing_pm:

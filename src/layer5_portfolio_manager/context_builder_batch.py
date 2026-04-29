@@ -1,11 +1,6 @@
 import json
-import logging
 
 from shared.config_loader import load_decisions_log, load_system_insights
-
-logger = logging.getLogger(__name__)
-
-_MAX_CANDIDATES_WARN = 15
 
 
 def _portfolio_section(portfolio: dict) -> str:
@@ -85,11 +80,6 @@ def _format_ticker_context(c: dict) -> str:
 
 
 def build_batch_context(candidates: list[dict], portfolio: dict) -> str:
-    if len(candidates) > _MAX_CANDIDATES_WARN:
-        logger.warning(
-            f"Duża liczba kandydatów dla PM: {len(candidates)} — kontekst może przekroczyć limit tokenów"
-        )
-
     sections = [
         (
             "CURRENT PORTFOLIO",

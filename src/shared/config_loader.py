@@ -51,6 +51,15 @@ def _decisions_log_path() -> Path:
     return DATA_DIR / filename
 
 
+def load_broker_tickers() -> list[str]:
+    available = _load_available_tickers()
+    if not available:
+        raise FileNotFoundError(
+            f"Brak pliku {_AVAILABLE_TICKERS_PDF} — nie można załadować tickerów dostępnych u brokera"
+        )
+    return sorted(available)
+
+
 def load_watchlist() -> dict:
     path = DATA_DIR / "watchlist.yaml"
     if not path.exists():

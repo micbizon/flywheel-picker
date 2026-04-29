@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from layer0_ideas.aggregator import run_idea_generation
 from layer6_feedback.main import run_feedback_loop
 from pipeline.orchestrator import run_pipeline
+from shared.config_loader import load_broker_tickers
 from shared.logging_config import setup_logging
 
 
@@ -30,6 +31,11 @@ def main() -> None:
         action="store_true",
         help="Uruchom tylko feedback loop (warstwa 6)",
     )
+    group.add_argument(
+        "--broker",
+        action="store_true",
+        help="Uruchom pipeline dla wszystkich tickerów dostępnych u brokera (available-tickers.pdf)",
+    )
     parser.add_argument(
         "--portfolio-manager",
         action="store_true",
@@ -43,6 +49,8 @@ def main() -> None:
         run_feedback_loop()
     elif args.tickers:
         run_pipeline(tickers=args.tickers, run_l5=args.portfolio_manager)
+    elif args.broker:
+        run_pipeline(tickers=load_broker_tickers(), run_l5=args.portfolio_manager)
     else:
         run_pipeline(run_l5=args.portfolio_manager)
 

@@ -3,13 +3,16 @@ import logging
 from pathlib import Path
 
 from shared.context import read_template
-from shared.llm_client import call_llm
+from shared.llm_client import call_llm, count_prompt_tokens
 from shared.logger import save_decision
 from shared.logging_config import get_decision_logger
 
 from .context_builder_batch import build_batch_context
 
 logger = logging.getLogger(__name__)
+
+_MAX_INPUT_TOKENS = 200_000
+_WARN_AT = 0.95
 
 PROMPT_PATH = (
     Path(__file__).parent.parent.parent
@@ -25,7 +28,13 @@ def run_portfolio_manager_batch(
 ) -> list[dict]:
     context = build_batch_context(candidates, portfolio)
     prompt = read_template(PROMPT_PATH).replace("{{ FULL_CONTEXT }}", context)
-    logger.info(f"PM prompt length: {len(prompt)} chars")
+    token_count = count_prompt_tokens(prompt, model_tier="portfolio_manager")
+    token_pct = token_count / _MAX_INPUT_TOKENS * 100
+    logger.info(f"PM prompt: {token_count} tokenów ({token_pct:.1f}% limitu)")
+    if token_count > _MAX_INPUT_TOKENS * _WARN_AT:
+        logger.warning(
+            f"PM prompt bliski limitu: {token_count}/{_MAX_INPUT_TOKENS} tokenów ({token_pct:.1f}%)"
+        )
 
     raw = call_llm(prompt, model_tier="portfolio_manager")
     logger.debug(

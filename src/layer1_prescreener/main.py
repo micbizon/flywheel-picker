@@ -3,6 +3,7 @@ import logging
 from shared.logging_config import close_decision_logger
 
 from .agent import run_prescreener
+from .prefilter import apply_prefilter
 
 logger = logging.getLogger(__name__)
 
@@ -10,8 +11,9 @@ PASSING_VERDICTS = {"PASS", "CONDITIONAL_PASS"}
 
 
 def run_prescreener_batch(tickers: list[str]) -> list[dict]:
+    passing, _ = apply_prefilter(tickers)
     results = []
-    for ticker in tickers:
+    for ticker in passing:
         try:
             result = run_prescreener(ticker)
             verdict = result.get("verdict", "UNKNOWN")

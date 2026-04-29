@@ -34,13 +34,13 @@ def _call_claude(prompt: str, cfg: dict, model_tier: str = "analysis") -> str:
         else cfg["anthropic_model_analysis"]
     )
     client = _get_claude_client(cfg)
-    message = client.messages.create(
+    with client.messages.stream(
         model=model,
         max_tokens=8192 if model_tier == "portfolio_manager" else 4096,
         temperature=cfg.get("anthropic_temperature", 0.2),
         messages=[{"role": "user", "content": prompt}],
-    )
-    return message.content[0].text
+    ) as stream:
+        return stream.get_final_text()
 
 
 def _call_ollama(prompt: str, cfg: dict) -> str:
@@ -97,6 +97,23 @@ def _safe_parse_json(response: str) -> dict | list:
 def reset_claude_client() -> None:
     global _claude_client
     _claude_client = None
+
+
+def count_prompt_tokens(prompt: str, model_tier: str = "analysis") -> int:
+    cfg = get_llm_config()
+    if not cfg["use_claude"]:
+        return len(prompt) // 4
+    model = (
+        cfg["anthropic_model_portfolio_manager"]
+        if model_tier == "portfolio_manager"
+        else cfg["anthropic_model_analysis"]
+    )
+    client = _get_claude_client(cfg)
+    response = client.messages.count_tokens(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return response.input_tokens
 
 
 def call_llm(

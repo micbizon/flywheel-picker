@@ -1,5 +1,23 @@
 # Changelog - all entries are generated
 
+## 2026-04-28 — Pre-filtr yfinance przed warstwą L1
+
+Stworzono `src/layer1_prescreener/prefilter.py` z `apply_prefilter(tickers)` — odrzuca spółki niespełniające progów finansowych przed wysłaniem do LLM. Pobiera metryki przez `yf.Ticker().info`: market cap ($1B–$100B), revenue growth YoY (≥10%), gross margin (≥35%), current ratio (≥1.2x), net debt/revenue (<3x, obliczane jako `(totalDebt - totalCash) / totalRevenue`), EV/Revenue (0.5x–25x), insider ownership (≥3%). Brak danych (None) lub wyjątek yfinance → ticker przepuszczany bez odrzucania. `run_prescreener_batch` w `main.py` wywołuje `apply_prefilter` na wejściowej liście i uruchamia pętlę LLM tylko na tickerach które przeszły filtr.
+
+---
+
+## 2026-04-28 — Flaga --broker
+
+Dodano `load_broker_tickers()` do `config_loader.py` — publiczny wrapper na `_load_available_tickers()`, zwraca posortowaną listę tickerów z `available-tickers.pdf` lub rzuca `FileNotFoundError` ze ścieżką do pliku. W `pipeline/main.py` dodano flagę `--broker` do grupy mutually exclusive — ładuje wszystkie tickery dostępne u brokera i przekazuje je do `run_pipeline()` zamiast watchlisty; można łączyć z `--portfolio-manager`.
+
+---
+
+## 2026-04-28 — Streaming odpowiedzi Anthropic zamiast single request
+
+W `_call_claude` w `llm_client.py` zastąpiono `client.messages.create()` wywołaniem `client.messages.stream()` z context managerem i `stream.get_final_text()`. Timeout `read=600s` przy pojedynczym żądaniu resetował się co 10 minut dla długich odpowiedzi portfolio managera (8192 tokenów) powodując `httpx.ReadTimeout`; przy streamingu timeout działa między kolejnymi tokenami, więc długie odpowiedzi nie są przerywane.
+
+---
+
 ## 2026-04-28 — TASK-034: Skrócenie kontekstu per ticker w build_batch_context
 
 W `context_builder_batch.py` zastąpiono `_candidate_section` (przekazywała pełny `json.dumps` L2 i L4 per ticker) nową funkcją `_format_ticker_context` — wyciąga tylko kluczowe pola: z L2 `fundamental.summary/key_strengths/key_risks` i `technical.summary/entry_zone/invalidation_level`; z L4 `bull.core_thesis/flywheel_mechanism/upside_x/price_target_3yr/key_assumptions`, `bear.central_thesis/top_risk/stress_test/what_would_change_mind`, `premortem.failure_scenarios[:2]`. Pomijane: `raw_analysis` wszystkich agentów, `historical_analogs`, więcej niż 2 scenariusze premortem. `build_batch_context` zaktualizowany do wywołania nowej funkcji. W `batch.py` naprawiono dwa blokujące błędy: usunięto `quit()` pozostawiony z debugowania i zmieniono `model_tier="decision"` → `"portfolio_manager"`; `logger.debug` dla długości promptu zmieniony na `logger.info` żeby trafił do `pipeline.log`.
