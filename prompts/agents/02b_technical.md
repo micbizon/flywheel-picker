@@ -1,4 +1,6 @@
 {{ CORE_RULES }}
+
+{{ COMPANY_NAME_CONTEXT }}
 {{ PRICE_CONTEXT }}
 
 Oceń setup techniczny [TICKER] pod kątem długoterminowego wejścia.
@@ -8,7 +10,6 @@ Zwróć wyłącznie JSON:
 {
   "ticker": "",
   "agent": "technical",
-  "score": 0,
   "verdict": "PASS|WATCH|REJECT",
   "summary": "MAX 2 zdania. Trend + jakość wejścia.",
   "entry_zone": "np. $95-102. Jeden powód w MAX 5 słowach.",

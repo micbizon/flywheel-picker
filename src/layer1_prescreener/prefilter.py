@@ -1,6 +1,10 @@
 import logging
+import tempfile
+from functools import lru_cache
 
 import yfinance as yf
+
+yf.set_tz_cache_location(tempfile.gettempdir())
 
 logger = logging.getLogger(__name__)
 
@@ -13,10 +17,11 @@ FILTERS = {
     "net_debt_to_revenue_max": 3.0,
     "ev_to_revenue_max": 20.0,
     "ev_to_revenue_min": 0.5,
-    "insider_ownership_min": 0.03,
+    "insider_ownership_min": 0.01,
 }
 
 
+@lru_cache(maxsize=None)
 def _get_metrics(ticker: str) -> dict:
     info = yf.Ticker(ticker).info
 
@@ -29,6 +34,9 @@ def _get_metrics(ticker: str) -> dict:
         net_debt_to_revenue = (total_debt - total_cash) / total_revenue
 
     return {
+        "long_name": info.get("longName"),
+        "sector": info.get("sector"),
+        "industry": info.get("industry"),
         "market_cap": info.get("marketCap"),
         "revenue_growth_yoy": info.get("revenueGrowth"),
         "gross_margin": info.get("grossMargins"),
@@ -76,27 +84,23 @@ def _failed_filters(metrics: dict) -> list[str]:
             FILTERS["insider_ownership_min"],
         ),
     ]
-    return [
-        name
-        for name, value, op, threshold in checks
-        if not _check(value, op, threshold)
-    ]
+    return [name for name, value, op, threshold in checks if not _check(value, op, threshold)]
 
 
-def apply_prefilter(tickers: list[str]) -> tuple[list[str], list[str]]:
+def apply_prefilter(tickers: list[str], max_failed: int = 1) -> tuple[list[dict], list[str]]:
     passing, rejected = [], []
     for ticker in tickers:
         try:
             metrics = _get_metrics(ticker)
             failed = _failed_filters(metrics)
-            if failed:
+            if len(failed) > max_failed:
                 logger.info(f"[prefilter] {ticker}: REJECT — {failed}")
                 rejected.append(ticker)
             else:
-                logger.info(f"[prefilter] {ticker}: PASS")
-                passing.append(ticker)
+                logger.info(f"[prefilter] {ticker}: PASS — failed={failed or 'none'}")
+                passing.append({"ticker": ticker, "metrics": metrics})
         except Exception as e:
             logger.warning(f"[prefilter] {ticker}: błąd danych, przepuszczam ({e})")
-            passing.append(ticker)
+            passing.append({"ticker": ticker, "metrics": {}})
     logger.info(f"[prefilter] {len(passing)}/{len(tickers)} tickerów przeszło filtr")
     return passing, rejected

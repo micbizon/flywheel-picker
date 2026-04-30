@@ -8,9 +8,7 @@ from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
-_AVAILABLE_TICKERS_PDF = (
-    Path(__file__).parent.parent.parent / "data" / "available-tickers.pdf"
-)
+_AVAILABLE_TICKERS_PDF = Path(__file__).parent.parent.parent / "data" / "available-tickers.pdf"
 _TICKER_PATTERN = re.compile(r"\b[A-Z]{1,6}:US\b")
 
 load_dotenv()
@@ -31,23 +29,15 @@ def _load_available_tickers() -> frozenset[str] | None:
         return None
     from pypdf import PdfReader
 
-    text = "\n".join(
-        page.extract_text() or "" for page in PdfReader(_AVAILABLE_TICKERS_PDF).pages
-    )
-    tickers = frozenset(
-        m.group().removesuffix(":US") for m in _TICKER_PATTERN.finditer(text)
-    )
-    logger.info(
-        f"available-tickers.pdf: znaleziono {len(tickers)} tickerów z giełdy US"
-    )
+    text = "\n".join(page.extract_text() or "" for page in PdfReader(_AVAILABLE_TICKERS_PDF).pages)
+    tickers = frozenset(m.group().removesuffix(":US") for m in _TICKER_PATTERN.finditer(text))
+    logger.info(f"available-tickers.pdf: znaleziono {len(tickers)} tickerów z giełdy US")
     return tickers
 
 
 def _decisions_log_path() -> Path:
     mode = os.getenv("RUN_MODE", "test").lower()
-    filename = (
-        "decisions_log.yaml" if mode == "production" else "decisions_log_test.yaml"
-    )
+    filename = "decisions_log.yaml" if mode == "production" else "decisions_log_test.yaml"
     return DATA_DIR / filename
 
 
@@ -72,13 +62,10 @@ def load_watchlist() -> dict:
     if available is not None:
         original = {t["ticker"] if isinstance(t, dict) else t for t in data["tickers"]}
         data["tickers"] = [
-            t
-            for t in data["tickers"]
-            if (t["ticker"] if isinstance(t, dict) else t) in available
+            t for t in data["tickers"] if (t["ticker"] if isinstance(t, dict) else t) in available
         ]
         removed_tickers = sorted(
-            original
-            - {t["ticker"] if isinstance(t, dict) else t for t in data["tickers"]}
+            original - {t["ticker"] if isinstance(t, dict) else t for t in data["tickers"]}
         )
         if removed_tickers:
             logger.warning(
@@ -99,9 +86,7 @@ def load_yaml(path: str | Path) -> dict:
 
 def save_yaml(path: str | Path, data: dict) -> None:
     with open(path, "w", encoding="utf-8") as f:
-        yaml.dump(
-            data, f, allow_unicode=True, default_flow_style=False, sort_keys=False
-        )
+        yaml.dump(data, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
 
 
 def load_portfolio() -> dict:
@@ -126,32 +111,46 @@ def save_system_insights(data: dict) -> None:
 
 
 def get_llm_config() -> dict:
-    use_claude = os.getenv("USE_CLAUDE_API", "false").lower() == "true"
-    if use_claude:
+    provider = os.getenv("LLM_PROVIDER", "ollama").lower()
+
+    if provider == "claude":
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
-            raise ValueError("USE_CLAUDE_API=true ale brak ANTHROPIC_API_KEY w .env")
+            raise ValueError("LLM_PROVIDER=claude ale brak ANTHROPIC_API_KEY w .env")
         return {
-            "use_claude": True,
-            "anthropic_api_key": api_key,
-            "anthropic_temperature": float(os.getenv("ANTHROPIC_TEMPERATURE", "0.2")),
-            "anthropic_model_analysis": os.getenv(
-                "ANTHROPIC_MODEL_ANALYSIS", "claude-haiku-4-5-20251001"
-            ),
-            "anthropic_model_portfolio_manager": os.getenv(
-                "ANTHROPIC_MODEL_PORTFOLIO_MANAGER", "claude-haiku-4-5-20251001"
+            "provider": "claude",
+            "api_key": api_key,
+            "temperature": float(os.getenv("LLM_TEMPERATURE")) if os.getenv("LLM_TEMPERATURE") else None,
+            "model_analysis": os.getenv("LLM_MODEL_ANALYSIS", "claude-haiku-4-5-20251001"),
+            "model_portfolio_manager": os.getenv(
+                "LLM_MODEL_PORTFOLIO_MANAGER", "claude-haiku-4-5-20251001"
             ),
         }
+
+    if provider == "openrouter":
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if not api_key:
+            raise ValueError("LLM_PROVIDER=openrouter ale brak OPENROUTER_API_KEY w .env")
+        return {
+            "provider": "openrouter",
+            "api_key": api_key,
+            "temperature": float(os.getenv("LLM_TEMPERATURE")) if os.getenv("LLM_TEMPERATURE") else None,
+            "model_analysis": os.getenv("LLM_MODEL_ANALYSIS", "openrouter/auto"),
+            "model_portfolio_manager": os.getenv("LLM_MODEL_PORTFOLIO_MANAGER", "openrouter/auto"),
+        }
+
     return {
-        "use_claude": use_claude,
-        "ollama_model": os.getenv("OLLAMA_MODEL_NAME", "llama3.2:3b"),
-        "ollama_base_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+        "provider": "ollama",
+        "temperature": float(os.getenv("LLM_TEMPERATURE", "0.2")),
+        "model_analysis": os.getenv("LLM_MODEL_ANALYSIS", "llama3.2:3b"),
+        "model_portfolio_manager": os.getenv("LLM_MODEL_ANALYSIS", "llama3.2:3b"),
+        "base_url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
     }
 
 
 def get_active_model() -> str:
     cfg = get_llm_config()
-    return "claude" if cfg["use_claude"] else cfg["ollama_model"]
+    return cfg["model_analysis"]
 
 
 def get_max_workers() -> int:

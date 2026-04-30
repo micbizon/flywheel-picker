@@ -17,13 +17,11 @@ from pipeline.checkpoint import (
     today_run_id,
 )
 from shared.config_loader import load_portfolio, load_watchlist
-from shared.llm_client import reset_claude_client
+from shared.llm_client import reset_llm_clients
 from shared.logging_config import close_decision_logger
 from shared.market_data import get_pnl_pct
 
 logger = logging.getLogger(__name__)
-
-_TOP_N_FOR_PM = 30
 
 
 def _log(step: str, entered: int, exited: int) -> None:
@@ -41,12 +39,10 @@ def _call_with_retry(fn, *args, max_retries: int = None, **kwargs):
                 raise
             is_connection = "Connection error" in str(e) or "ConnectError" in str(e)
             if is_connection:
-                reset_claude_client()
+                reset_llm_clients()
                 logger.warning("Błąd sieci — klient zresetowany.")
             wait = 60 * attempt
-            logger.warning(
-                f"Próba {attempt + 1}/{max_retries} nieudana: {e} — retry za {wait}s"
-            )
+            logger.warning(f"Próba {attempt + 1}/{max_retries} nieudana: {e} — retry za {wait}s")
             time.sleep(wait)
 
 
@@ -107,26 +103,25 @@ def run_pipeline(tickers: list[str] | None = None, run_l5: bool = False) -> None
         logger.info(f"  odpadły:  {dropped_l1}")
 
     layer2_tickers = list(dict.fromkeys(passing_tickers + in_portfolio))
+    # layer2_tickers.remove("SQ")
 
     missing = [t for t in in_portfolio if t not in layer2_tickers]
     if missing:
         logger.error(f"BŁĄD: ticki z portfolio nie trafiły do warstwy 2: {missing}")
 
-    logger.info(
-        f"--- Warstwa 2: Analiza równoległa ({len(layer2_tickers)} tickerów) ---"
-    )
+    logger.info(f"--- Warstwa 2: Analiza równoległa ({len(layer2_tickers)} tickerów) ---")
     completed_l2 = get_completed_tickers(run_id, "l2")
-    layer2_results: dict[str, dict] = {
-        t: get_ticker_result(run_id, "l2", t) for t in completed_l2
-    }
+    layer2_results: dict[str, dict] = {t: get_ticker_result(run_id, "l2", t) for t in completed_l2}
     for ticker in layer2_tickers:
         if ticker in completed_l2:
             logger.info(f"L2 {ticker}: wczytano z checkpointu")
             continue
-        result = _call_with_retry(run_parallel_analysis, ticker)
-        layer2_results[ticker] = result
-        save_ticker_result(run_id, "l2", ticker, result)
-        close_decision_logger(ticker)
+        try:
+            result = _call_with_retry(run_parallel_analysis, ticker)
+            layer2_results[ticker] = result
+            save_ticker_result(run_id, "l2", ticker, result)
+        finally:
+            close_decision_logger(ticker)
     _log("L2 analiza", len(layer2_tickers), len(layer2_results))
     logger.info(f"  wyjście: {sorted(layer2_results)}")
 
@@ -141,18 +136,18 @@ def run_pipeline(tickers: list[str] | None = None, run_l5: bool = False) -> None
 
     logger.info(f"--- Warstwa 4: Bull/Bear/Pre-Mortem ({len(selected)} tickerów) ---")
     completed_l4 = get_completed_tickers(run_id, "l4")
-    layer4_results: dict[str, dict] = {
-        t: get_ticker_result(run_id, "l4", t) for t in completed_l4
-    }
+    layer4_results: dict[str, dict] = {t: get_ticker_result(run_id, "l4", t) for t in completed_l4}
     for entry in selected:
         ticker = entry["ticker"]
         if ticker in completed_l4:
             logger.info(f"L4 {ticker}: wczytano z checkpointu")
             continue
-        result = _call_with_retry(run_cases, ticker, entry["analysis"])
-        layer4_results[ticker] = result
-        save_ticker_result(run_id, "l4", ticker, result)
-        close_decision_logger(ticker)
+        try:
+            result = _call_with_retry(run_cases, ticker, entry["analysis"])
+            layer4_results[ticker] = result
+            save_ticker_result(run_id, "l4", ticker, result)
+        finally:
+            close_decision_logger(ticker)
     _log("L4 cases", len(selected), len(layer4_results))
     logger.info(f"  wyjście: {sorted(layer4_results)}")
 
@@ -160,15 +155,10 @@ def run_pipeline(tickers: list[str] | None = None, run_l5: bool = False) -> None
     if missing_pm:
         logger.error(f"BŁĄD: ticki z portfolio nie trafiły do warstwy 4: {missing_pm}")
 
-    top_n_tickers = [e["ticker"] for e in selected if not e["in_portfolio"]][
-        :_TOP_N_FOR_PM
-    ]
-    pm_tickers = list(dict.fromkeys(top_n_tickers + in_portfolio))
+    pm_tickers = [e["ticker"] for e in selected]
 
     if not run_l5:
-        logger.info(
-            "--- Warstwa 5: Portfolio Manager pominięta (użyj --portfolio-manager) ---"
-        )
+        logger.info("--- Warstwa 5: Portfolio Manager pominięta (użyj --portfolio-manager) ---")
         logger.info("--- Pipeline zakończony pomyślnie ---")
         return
 
@@ -182,9 +172,7 @@ def run_pipeline(tickers: list[str] | None = None, run_l5: bool = False) -> None
             "ticker": ticker,
             "in_portfolio": in_portfolio_flag,
             "current_size": position.get("current_weight_pct", 0) if position else 0,
-            "pnl_pct": get_pnl_pct(ticker, position.get("entry_price", 0))
-            if position
-            else None,
+            "pnl_pct": get_pnl_pct(ticker, position.get("entry_price", 0)) if position else None,
             "l2": layer2_results.get(ticker, {}),
             "l4": layer4_results.get(ticker, {}),
         }

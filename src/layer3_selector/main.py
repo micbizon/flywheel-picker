@@ -2,7 +2,7 @@ import logging
 
 from shared.config_loader import load_portfolio
 
-from .weights import AGENT_WEIGHTS, MIN_SCORE_THRESHOLD, TOP_N
+from .weights import AGENT_WEIGHTS, MIN_SCORE_THRESHOLD, TOP_N, VERDICT_SCORES
 
 logger = logging.getLogger(__name__)
 
@@ -10,8 +10,8 @@ logger = logging.getLogger(__name__)
 def _weighted_score(analysis: dict) -> float:
     total = 0.0
     for agent, weight in AGENT_WEIGHTS.items():
-        score = analysis.get(agent, {}).get("score", 0)
-        total += score * weight
+        verdict = analysis.get(agent, {}).get("verdict", "REJECT")
+        total += VERDICT_SCORES.get(verdict, 0) * weight
     return round(total, 4)
 
 
@@ -22,11 +22,7 @@ def run_selector(analyses: list[dict]) -> list[dict]:
     scored = []
     for analysis in analyses:
         ticker = next(
-            (
-                v.get("ticker")
-                for v in analysis.values()
-                if isinstance(v, dict) and v.get("ticker")
-            ),
+            (v.get("ticker") for v in analysis.values() if isinstance(v, dict) and v.get("ticker")),
             None,
         )
         if ticker is None:
@@ -44,7 +40,7 @@ def run_selector(analyses: list[dict]) -> list[dict]:
     portfolio_entries = [e for e in scored if e["in_portfolio"]]
     non_portfolio = [e for e in scored if not e["in_portfolio"]]
 
-    top = non_portfolio[:TOP_N]
+    top = non_portfolio[:TOP_N - len(portfolio_entries)]
 
     seen = {e["ticker"] for e in top}
     for e in portfolio_entries:

@@ -10,12 +10,7 @@ from .context_builder import build_context
 
 logger = logging.getLogger(__name__)
 
-PROMPT_PATH = (
-    Path(__file__).parent.parent.parent
-    / "prompts"
-    / "agents"
-    / "05_portfolio_manager.md"
-)
+PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "agents" / "05_portfolio_manager.md"
 
 
 def _build_decision_payload(ticker: str, pm_result: dict) -> dict:

@@ -1,3 +1,4 @@
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 
@@ -14,4 +15,4 @@ def load_core_rules() -> str:
         read_template(PROMPTS_DIR / "CORE_RULES.md")
         + "\n"
         + read_template(PROMPTS_DIR / "RESPONSE_RULES.md")
-    )
+    ).replace("{{ CURRENT_DATE }}", date.today().isoformat())

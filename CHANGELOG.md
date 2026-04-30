@@ -1,5 +1,35 @@
 # Changelog - all entries are generated
 
+## 2026-04-30 — Dwufazowy portfolio manager, TOP_N z .env, pre-fetch yfinance w L4, temperature opcjonalna
+
+**Dwufazowy portfolio manager (`layer5_portfolio_manager`):** `05_portfolio_manager.md` zastąpiony dwoma promptami — `05a_portfolio_screener.md` (faza 1: 3 pytania dla wszystkich kandydatów, kompaktowy JSON `{ticker, q1, q2, q3, verdict/preliminary_action, note}`) i `05b_portfolio_allocator.md` (faza 2: tylko BUY_CANDIDATE + pozycje z portfolio, pełne decyzje alokacyjne). `batch.py` przepisany: faza 1 ewaluuje wszystkich, filtruje do BUY+portfolio, faza 2 alokuje; tickery PASS z fazy 1 automatycznie wchodzą do wyniku końcowego. `context_builder_batch.py` otrzymał nową funkcję `build_allocator_context` — lżejszy kontekst dla fazy 2 (phase1 note + bull upside/target + technical entry/stop). Tickery z portfolio sortowane na początek listy kandydatów. Rozwiązuje problem gubienia tickerów przez model przy dużej liczbie kandydatów.
+
+**`TOP_N` przeniesiony do `.env`:** Zmienna `TOP_N` z `layer3_selector/weights.py` czytana przez `os.getenv("TOP_N", "20")`. Dodany wpis w `.env.example`. Jeden punkt konfiguracji dla całego pipeline'u.
+
+**L3 selector — dokładnie TOP_N tickerów do L5:** `run_selector` zmieniony z `non_portfolio[:TOP_N]` na `non_portfolio[:TOP_N - len(portfolio_entries)]`, żeby portfolio + non-portfolio = dokładnie TOP_N. Usunięty `_TOP_N_FOR_PM` z `orchestrator.py`; L5 używa bezpośrednio `[e["ticker"] for e in selected]`.
+
+**Pre-fetch yfinance w L4 (`layer4_cases`):** Ten sam wzorzec co L2 — `get_price_context` wywołany raz sekwencyjnie w `run_cases` przed równoległymi agentami; `price_ctx` przekazany przez `functools.partial` do `run_bull` i `run_bear`. `_run_bull_single` i `_run_bear_single` przyjmują `price_ctx: str` zamiast wywoływać yfinance samodzielnie. Eliminuje do 9 równoległych połączeń HTTP przy 3 agentach × 3 instancjach.
+
+**`temperature` opcjonalna w `llm_client.py`:** `_call_claude` buduje `kwargs` dict i dodaje `temperature` tylko gdy `cfg["temperature"] is not None`. To samo dla `_call_openrouter`. `config_loader.py` zwraca `None` dla temperature gdy `LLM_TEMPERATURE` nie jest ustawione w `.env` (zamiast domyślnych `0.2`). Rozwiązuje błąd `400 temperature is deprecated` dla modeli Claude 4 (np. `claude-opus-4-7`).
+
+---
+
+## 2026-04-29 — Obsługa wielu providerów LLM (claude / openrouter / ollama)
+
+**Refaktoryzacja `get_llm_config()` w `config_loader.py`:** Zmienna `USE_CLAUDE_API=true/false` zastąpiona przez `LLM_PROVIDER` z wartościami `claude | openrouter | ollama`. Env vary przemianowane: `ANTHROPIC_MODEL_ANALYSIS` → `LLM_MODEL_ANALYSIS`, `ANTHROPIC_MODEL_PORTFOLIO_MANAGER` → `LLM_MODEL_PORTFOLIO_MANAGER`, `ANTHROPIC_TEMPERATURE` → `LLM_TEMPERATURE`. Dodana obsługa `OPENROUTER_API_KEY`. `get_active_model()` zwraca teraz `cfg["model_analysis"]` bezpośrednio. `.env.example` zaktualizowany do nowych nazw.
+
+**Nowy provider OpenRouter w `llm_client.py`:** Dodano `_call_openrouter()` — streaming przez `httpx` SSE (`/api/v1/chat/completions`), te same timeouty co claude (`connect=30s, read/write/pool=600s`). `_call_ollama()` zaktualizowany o obsługę `model_tier`. `call_llm()` zmieniony z if/else na dispatch dict `_callers` po kluczu `cfg["provider"]`. `reset_claude_client()` przemianowany na `reset_llm_clients()` (zeruje też `_openrouter_client`). Wszystkie odwołania do kluczy `anthropic_*` w cfg zmienione na nazwy generyczne.
+
+**`orchestrator.py`:** Import `reset_claude_client` → `reset_llm_clients`.
+
+**`prefilter.py`:** Dodano `yf.set_tz_cache_location(None)` przy imporcie modułu — wyłącza SQLite cache yfinance, który tworzył non-daemon wątki blokujące zakończenie procesu po Ctrl+C.
+
+**`CORE_RULES.md`:** Horyzont asymetrii zmieniony z `5 lat` na `3 lata`.
+
+**Dane:** `data/watchlist.yaml` rozbudowana do 87 tickerów (65 ze screenera 25.04 + ręcznie: AMD, ASTS, INTC, RKLB, TXN 27.04; NBIS, CRWD, S, PANW, CYBR, ADYEY, BILL, PCTY, TOST, APPF, CWAN, ASAN, MNDY, VEEV, DOCS, PHVS 28.04). `data/portfolio.yaml`: usunięta pozycja RDW, dodana INTC 10%, COST zmniejszony z 20% do 10%, gotówka zwiększona z 60% do 70%.
+
+---
+
 ## 2026-04-28 — Pre-filtr yfinance przed warstwą L1
 
 Stworzono `src/layer1_prescreener/prefilter.py` z `apply_prefilter(tickers)` — odrzuca spółki niespełniające progów finansowych przed wysłaniem do LLM. Pobiera metryki przez `yf.Ticker().info`: market cap ($1B–$100B), revenue growth YoY (≥10%), gross margin (≥35%), current ratio (≥1.2x), net debt/revenue (<3x, obliczane jako `(totalDebt - totalCash) / totalRevenue`), EV/Revenue (0.5x–25x), insider ownership (≥3%). Brak danych (None) lub wyjątek yfinance → ticker przepuszczany bez odrzucania. `run_prescreener_batch` w `main.py` wywołuje `apply_prefilter` na wejściowej liście i uruchamia pętlę LLM tylko na tickerach które przeszły filtr.

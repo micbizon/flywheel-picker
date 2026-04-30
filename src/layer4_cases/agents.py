@@ -9,7 +9,6 @@ from shared.config_loader import get_max_workers
 from shared.context import load_core_rules, read_template
 from shared.llm_client import call_llm
 from shared.logging_config import log_agent_result
-from shared.market_data import get_price_context
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +30,7 @@ def _load_prompt(
         read_template(PROMPTS_DIR / filename)
         .replace("{{ CORE_RULES }}", load_core_rules())
         .replace("[TICKER]", ticker)
-        .replace(
-            "[LAYER2_CONTEXT]", json.dumps(layer2_context, ensure_ascii=False, indent=2)
-        )
+        .replace("[LAYER2_CONTEXT]", json.dumps(layer2_context, ensure_ascii=False, indent=2))
         .replace("{{ PRICE_CONTEXT }}", price_context)
     )
     if extra:
@@ -42,9 +39,7 @@ def _load_prompt(
     return prompt
 
 
-def _load_synthesizer_prompt(
-    filename: str, ticker: str, analyses_json: str, n: int
-) -> str:
+def _load_synthesizer_prompt(filename: str, ticker: str, analyses_json: str, n: int) -> str:
     return (
         read_template(PROMPTS_DIR / filename)
         .replace("{{ CORE_RULES }}", load_core_rules())
@@ -56,21 +51,15 @@ def _load_synthesizer_prompt(
     )
 
 
-def _run_bull_single(ticker: str, layer2_context: dict) -> dict:
-    price_ctx = get_price_context(ticker)
-    result = call_llm(
-        _load_prompt("04a_bull.md", ticker, layer2_context, price_context=price_ctx)
-    )
+def _run_bull_single(ticker: str, layer2_context: dict, price_ctx: str) -> dict:
+    result = call_llm(_load_prompt("04a_bull.md", ticker, layer2_context, price_context=price_ctx))
     result["ticker"] = ticker
     log_agent_result(ticker, "bull_instance", result)
     return result
 
 
-def _run_bear_single(ticker: str, layer2_context: dict) -> dict:
-    price_ctx = get_price_context(ticker)
-    result = call_llm(
-        _load_prompt("04b_bear.md", ticker, layer2_context, price_context=price_ctx)
-    )
+def _run_bear_single(ticker: str, layer2_context: dict, price_ctx: str) -> dict:
+    result = call_llm(_load_prompt("04b_bear.md", ticker, layer2_context, price_context=price_ctx))
     result["ticker"] = ticker
     log_agent_result(ticker, "bear_instance", result)
     return result
@@ -90,9 +79,7 @@ def _run_premortem_single(ticker: str, layer2_context: dict) -> dict:
 def _run_bull_synthesizer(ticker: str, analyses: list[dict]) -> dict:
     n = len(analyses)
     analyses_json = json.dumps(analyses, ensure_ascii=False, indent=2)
-    prompt = _load_synthesizer_prompt(
-        "04a_bull_synthesizer.md", ticker, analyses_json, n
-    )
+    prompt = _load_synthesizer_prompt("04a_bull_synthesizer.md", ticker, analyses_json, n)
     result = call_llm(prompt, model_tier="decision")
     result["ticker"] = ticker
     log_agent_result(ticker, "bull_synthesizer", result)
@@ -102,9 +89,7 @@ def _run_bull_synthesizer(ticker: str, analyses: list[dict]) -> dict:
 def _run_bear_synthesizer(ticker: str, analyses: list[dict]) -> dict:
     n = len(analyses)
     analyses_json = json.dumps(analyses, ensure_ascii=False, indent=2)
-    prompt = _load_synthesizer_prompt(
-        "04b_bear_synthesizer.md", ticker, analyses_json, n
-    )
+    prompt = _load_synthesizer_prompt("04b_bear_synthesizer.md", ticker, analyses_json, n)
     result = call_llm(prompt, model_tier="decision")
     result["ticker"] = ticker
     log_agent_result(ticker, "bear_synthesizer", result)
@@ -114,31 +99,25 @@ def _run_bear_synthesizer(ticker: str, analyses: list[dict]) -> dict:
 def _run_premortem_synthesizer(ticker: str, analyses: list[dict]) -> dict:
     n = len(analyses)
     analyses_json = json.dumps(analyses, ensure_ascii=False, indent=2)
-    prompt = _load_synthesizer_prompt(
-        "04c_premortem_synthesizer.md", ticker, analyses_json, n
-    )
+    prompt = _load_synthesizer_prompt("04c_premortem_synthesizer.md", ticker, analyses_json, n)
     result = call_llm(prompt, model_tier="decision")
     result["ticker"] = ticker
     log_agent_result(ticker, "premortem_synthesizer", result)
     return result
 
 
-def run_bull(ticker: str, layer2_context: dict) -> dict:
+def run_bull(ticker: str, layer2_context: dict, price_ctx: str = "") -> dict:
     n = _get_instances()
     with ThreadPoolExecutor(max_workers=min(n, get_max_workers())) as ex:
-        futures = [
-            ex.submit(_run_bull_single, ticker, layer2_context) for _ in range(n)
-        ]
+        futures = [ex.submit(_run_bull_single, ticker, layer2_context, price_ctx) for _ in range(n)]
         analyses = [f.result() for f in as_completed(futures)]
     return _run_bull_synthesizer(ticker, analyses)
 
 
-def run_bear(ticker: str, layer2_context: dict) -> dict:
+def run_bear(ticker: str, layer2_context: dict, price_ctx: str = "") -> dict:
     n = _get_instances()
     with ThreadPoolExecutor(max_workers=min(n, get_max_workers())) as ex:
-        futures = [
-            ex.submit(_run_bear_single, ticker, layer2_context) for _ in range(n)
-        ]
+        futures = [ex.submit(_run_bear_single, ticker, layer2_context, price_ctx) for _ in range(n)]
         analyses = [f.result() for f in as_completed(futures)]
     return _run_bear_synthesizer(ticker, analyses)
 
@@ -146,8 +125,6 @@ def run_bear(ticker: str, layer2_context: dict) -> dict:
 def run_premortem(ticker: str, layer2_context: dict) -> dict:
     n = _get_instances()
     with ThreadPoolExecutor(max_workers=min(n, get_max_workers())) as ex:
-        futures = [
-            ex.submit(_run_premortem_single, ticker, layer2_context) for _ in range(n)
-        ]
+        futures = [ex.submit(_run_premortem_single, ticker, layer2_context) for _ in range(n)]
         analyses = [f.result() for f in as_completed(futures)]
     return _run_premortem_synthesizer(ticker, analyses)

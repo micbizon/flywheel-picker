@@ -71,7 +71,7 @@ def get_decision_logger(ticker: str) -> logging.Logger:
 
 def log_agent_result(ticker: str, agent_name: str, result: dict) -> None:
     dec_log = get_decision_logger(ticker)
-    fields = {k: result[k] for k in ("score", "verdict") if result.get(k) is not None}
+    fields = {k: result[k] for k in ("verdict",) if result.get(k) is not None}
     summary = " ".join(f"{k}={v}" for k, v in fields.items()) or "ok"
     dec_log.info(f"[{agent_name}] {summary}")
     dec_log.debug(f"[{agent_name}] raw_analysis: {result.get('raw_analysis', '')}")

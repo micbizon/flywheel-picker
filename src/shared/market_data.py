@@ -1,5 +1,6 @@
 import logging
 
+import pandas as pd
 import yfinance as yf
 
 logger = logging.getLogger(__name__)
@@ -43,52 +44,95 @@ def get_price_context(ticker: str) -> str:
             lines.append(f"Wolumen dziś vs średnia: {vol_ratio:.1f}x")
 
         return (
-            "\nAKTUALNE DANE RYNKOWE (pobrane w czasie rzeczywistym):\n"
-            + "\n".join(lines)
-            + "\n"
+            "\nAKTUALNE DANE RYNKOWE (pobrane w czasie rzeczywistym):\n" + "\n".join(lines) + "\n"
         )
     except Exception as e:
         logger.warning(f"get_price_context({ticker}) failed: {e}")
         return ""
 
 
-def get_financial_context(ticker: str) -> str:
+def get_company_name_context(ticker: str) -> str:
+    try:
+        i = yf.Ticker(ticker).info
+        parts = [f"Ticker: {ticker}"]
+        if i.get("longName"):
+            parts.append(i["longName"])
+        if i.get("sector") or i.get("industry"):
+            parts.append(f"{i.get('sector', '?')} / {i.get('industry', '?')}")
+        return " — ".join(parts)
+    except Exception:
+        return f"Ticker: {ticker}"
+
+
+def get_sentiment_context(ticker: str) -> str:
+    try:
+        news = yf.Ticker(ticker).news or []
+        if not news:
+            return f"Ticker: {ticker}\n(brak newsów w yfinance)"
+        lines = [f"Ticker: {ticker} — NAJNOWSZE NEWSY:"]
+        for item in news[:7]:
+            c = item.get("content", {})
+            date = c.get("pubDate", "")[:10]
+            title = c.get("title", "")
+            summary = c.get("summary", "")[:120]
+            provider = c.get("provider", {}).get("displayName", "")
+            lines.append(f"{date} [{provider}] {title}")
+            if summary:
+                lines.append(f"  {summary}")
+        return "\n".join(lines) + "\n"
+    except Exception as e:
+        logger.warning(f"get_sentiment_context({ticker}) failed: {e}")
+        return f"Ticker: {ticker}\n"
+
+
+def get_ownership_context(ticker: str) -> str:
     try:
         stock = yf.Ticker(ticker)
-        i = stock.info
-        rev = i.get("totalRevenue")
-        rev_growth = i.get("revenueGrowth")
-        gm = i.get("grossMargins")
-        fcf = i.get("freeCashflow")
-        insider = i.get("heldPercentInsiders")
-        ev_rev = i.get("enterpriseToRevenue")
-        cash = i.get("totalCash")
-        debt = i.get("totalDebt")
+        lines = [f"Ticker: {ticker} — DANE WŁASNOŚCIOWE:"]
 
-        lines = []
-        if rev:
-            lines.append(f"Revenue TTM: ${rev / 1e6:.0f}M")
-        if rev_growth is not None:
-            lines.append(f"Revenue Growth YoY: {rev_growth * 100:+.1f}%")
-        if gm is not None:
-            lines.append(f"Gross Margin: {gm * 100:.1f}%")
-        if fcf is not None:
-            lines.append(f"FCF TTM: ${fcf / 1e6:+.0f}M")
-        if cash is not None and debt is not None:
-            net_cash = (cash - debt) / 1e6
-            lines.append(f"Dług netto: ${net_cash:+.0f}M")
-        if insider is not None:
-            lines.append(f"Insider Ownership: {insider * 100:.1f}%")
-        if ev_rev is not None:
-            lines.append(f"EV/Revenue: {ev_rev:.1f}x")
+        major = stock.major_holders
+        if major is not None and not major.empty:
+            breakdown = major["Value"].to_dict()
+            insider_pct = breakdown.get("insidersPercentHeld")
+            inst_pct = breakdown.get("institutionsPercentHeld")
+            inst_count = breakdown.get("institutionsCount")
+            parts = []
+            if insider_pct is not None:
+                parts.append(f"Insider: {insider_pct * 100:.1f}%")
+            if inst_pct is not None:
+                count_str = f" ({int(inst_count)} inst.)" if inst_count else ""
+                parts.append(f"Instytucje: {inst_pct * 100:.1f}%{count_str}")
+            if parts:
+                lines.append("  " + " | ".join(parts))
 
-        if not lines:
-            return ""
-        return (
-            "\nAKTUALNE DANE FINANSOWE (pobrane w czasie rzeczywistym):\n"
-            + "\n".join(lines)
-            + "\n"
-        )
-    except Exception:
-        logger.warning(f"get_financial_context({ticker}) failed — brak danych")
-        return ""
+        transactions = stock.insider_transactions
+        if transactions is not None and not transactions.empty:
+            cutoff = pd.Timestamp.now() - pd.DateOffset(months=3)
+            recent = transactions[pd.to_datetime(transactions["Start Date"]) >= cutoff]
+            if recent.empty:
+                lines.append("  Transakcje insiderów (ostatnie 3 miesiące): brak")
+            else:
+                lines.append("  Transakcje insiderów (ostatnie 3 miesiące):")
+                for _, row in recent.iterrows():
+                    date = str(row.get("Start Date", ""))[:10]
+                    insider = row.get("Insider", "")
+                    position = row.get("Position", "")
+                    text = row.get("Text", "")
+                    shares = int(row.get("Shares", 0))
+                    lines.append(f"  {date} {insider} ({position}): {text[:60]} [{shares:,} akcji]")
+
+        inst = stock.institutional_holders
+        if inst is not None and not inst.empty:
+            by_change = inst.reindex(inst["pctChange"].abs().sort_values(ascending=False).index)
+            lines.append("  Instytucje — największe zmiany:")
+            for _, row in by_change.head(5).iterrows():
+                holder = row.get("Holder", "")
+                value = row.get("Value", 0)
+                pct_change = row.get("pctChange", None)
+                chg = f" {pct_change * 100:+.1f}%" if pct_change is not None else ""
+                lines.append(f"  {holder}: ${value / 1e6:.0f}M{chg}")
+
+        return "\n".join(lines) + "\n"
+    except Exception as e:
+        logger.warning(f"get_ownership_context({ticker}) failed: {e}")
+        return f"Ticker: {ticker}\n"

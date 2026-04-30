@@ -1,5 +1,6 @@
 {{ CORE_RULES }}
-{{ FINANCIAL_CONTEXT }}
+
+{{ COMPANY_NAME_CONTEXT }}
 
 Analizuj strukturę własnościową [TICKER].
 
@@ -7,7 +8,6 @@ Zwróć wyłącznie JSON:
 {
   "ticker": "",
   "agent": "ownership",
-  "score": 0,
   "verdict": "PASS|WATCH|REJECT",
   "summary": "MAX 2 zdania. Insider signal + float risk.",
   "float_risk": "LOW|MEDIUM|HIGH + powód MAX 8 słów.",

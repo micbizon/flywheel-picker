@@ -1,12 +1,13 @@
 {{ CORE_RULES }}
 
+{{ COMPANY_NAME_CONTEXT }}
+
 Analizuj krajobraz informacyjny wokół [TICKER].
 
 Zwróć wyłącznie JSON:
 {
   "ticker": "",
   "agent": "sentiment",
-  "score": 0,
   "verdict": "PASS|WATCH|REJECT",
   "summary": "MAX 2 zdania. Narracja + główny katalizator.",
   "narrative_status": "AHEAD|BEHIND|DISTORTED",

@@ -10,15 +10,11 @@ logger = logging.getLogger(__name__)
 
 def run_idea_generation() -> None:
     watchlist = load_watchlist()
-    existing = {
-        entry["ticker"] for entry in watchlist["tickers"] if isinstance(entry, dict)
-    }
+    existing = {entry["ticker"] for entry in watchlist["tickers"] if isinstance(entry, dict)}
 
     insider_tickers = fetch_insider_buys()
     if not insider_tickers:
-        logger.info(
-            "idea_generation: insider_buying niedostępny — używam tylko screener"
-        )
+        logger.info("idea_generation: insider_buying niedostępny — używam tylko screener")
     screener_tickers = fetch_screener_candidates()
 
     today = date.today().isoformat()
