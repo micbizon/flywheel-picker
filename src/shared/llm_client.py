@@ -63,7 +63,7 @@ def _call_openrouter(prompt: str, cfg: dict, model_tier: str = "analysis") -> st
                 "model": model,
                 "messages": [{"role": "user", "content": prompt}],
                 "max_tokens": 8192 if model_tier == "portfolio_manager" else 4096,
-                **( {"temperature": cfg["temperature"]} if cfg["temperature"] is not None else {}),
+                **({"temperature": cfg["temperature"]} if cfg["temperature"] is not None else {}),
                 "stream": True,
             },
         ) as response:
@@ -89,7 +89,7 @@ def _call_ollama(prompt: str, cfg: dict, model_tier: str = "analysis") -> str:
     )
     response = httpx.post(
         f"{cfg['base_url']}/api/generate",
-        json={"model": model, "prompt": prompt, "stream": False},
+        json={"model": model, "prompt": prompt, "format": "json", "stream": False},
         timeout=1800.0,
     )
     response.raise_for_status()

@@ -111,7 +111,10 @@ def run_pipeline(tickers: list[str] | None = None, run_l5: bool = False) -> None
 
     logger.info(f"--- Warstwa 2: Analiza równoległa ({len(layer2_tickers)} tickerów) ---")
     completed_l2 = get_completed_tickers(run_id, "l2")
-    layer2_results: dict[str, dict] = {t: get_ticker_result(run_id, "l2", t) for t in completed_l2}
+    layer2_tickers_set = set(layer2_tickers)
+    layer2_results: dict[str, dict] = {
+        t: get_ticker_result(run_id, "l2", t) for t in completed_l2 if t in layer2_tickers_set
+    }
     for ticker in layer2_tickers:
         if ticker in completed_l2:
             logger.info(f"L2 {ticker}: wczytano z checkpointu")
@@ -136,7 +139,10 @@ def run_pipeline(tickers: list[str] | None = None, run_l5: bool = False) -> None
 
     logger.info(f"--- Warstwa 4: Bull/Bear/Pre-Mortem ({len(selected)} tickerów) ---")
     completed_l4 = get_completed_tickers(run_id, "l4")
-    layer4_results: dict[str, dict] = {t: get_ticker_result(run_id, "l4", t) for t in completed_l4}
+    selected_tickers_set = {e["ticker"] for e in selected}
+    layer4_results: dict[str, dict] = {
+        t: get_ticker_result(run_id, "l4", t) for t in completed_l4 if t in selected_tickers_set
+    }
     for entry in selected:
         ticker = entry["ticker"]
         if ticker in completed_l4:
