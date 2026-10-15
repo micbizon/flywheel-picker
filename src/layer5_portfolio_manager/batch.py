@@ -14,12 +14,8 @@ logger = logging.getLogger(__name__)
 _MAX_INPUT_TOKENS = 200_000
 _WARN_AT = 0.95
 
-_SCREENER_PROMPT_PATH = (
-    Path(__file__).parent.parent.parent / "prompts" / "agents" / "05a_portfolio_screener.md"
-)
-_ALLOCATOR_PROMPT_PATH = (
-    Path(__file__).parent.parent.parent / "prompts" / "agents" / "05b_portfolio_allocator.md"
-)
+_SCREENER_PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "agents" / "05a_portfolio_screener.md"
+_ALLOCATOR_PROMPT_PATH = Path(__file__).parent.parent.parent / "prompts" / "agents" / "05b_portfolio_allocator.md"
 
 
 def _log_token_count(label: str, prompt: str) -> None:
@@ -39,11 +35,7 @@ def run_portfolio_manager_batch(
 
     # Faza 1 — ewaluacja wszystkich kandydatów
     context_p1 = build_batch_context(candidates, portfolio)
-    prompt_p1 = (
-        read_template(_SCREENER_PROMPT_PATH)
-        .replace("{{ FULL_CONTEXT }}", context_p1)
-        .replace("[N]", str(n))
-    )
+    prompt_p1 = read_template(_SCREENER_PROMPT_PATH).replace("{{ FULL_CONTEXT }}", context_p1).replace("[N]", str(n))
     _log_token_count("faza 1", prompt_p1)
     phase1_raw = call_llm(prompt_p1, model_tier="portfolio_manager")
     phase1_results: list[dict] = phase1_raw if isinstance(phase1_raw, list) else [phase1_raw]
@@ -53,16 +45,11 @@ def run_portfolio_manager_batch(
     buy_candidates = [
         r
         for r in phase1_results
-        if not by_ticker.get(r["ticker"], {}).get("in_portfolio")
-        and r.get("verdict") == "BUY_CANDIDATE"
+        if not by_ticker.get(r["ticker"], {}).get("in_portfolio") and r.get("verdict") == "BUY_CANDIDATE"
     ]
-    portfolio_entries = [
-        r for r in phase1_results if by_ticker.get(r["ticker"], {}).get("in_portfolio")
-    ]
+    portfolio_entries = [r for r in phase1_results if by_ticker.get(r["ticker"], {}).get("in_portfolio")]
     phase2_input = portfolio_entries + buy_candidates
-    logger.info(
-        f"PM faza 2: {len(portfolio_entries)} portfolio + {len(buy_candidates)} BUY kandydatów"
-    )
+    logger.info(f"PM faza 2: {len(portfolio_entries)} portfolio + {len(buy_candidates)} BUY kandydatów")
 
     # Faza 2 — alokacja
     context_p2 = build_allocator_context(phase2_input, candidates, portfolio)

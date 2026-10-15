@@ -40,7 +40,7 @@ def run_selector(analyses: list[dict]) -> list[dict]:
     portfolio_entries = [e for e in scored if e["in_portfolio"]]
     non_portfolio = [e for e in scored if not e["in_portfolio"]]
 
-    top = non_portfolio[:TOP_N - len(portfolio_entries)]
+    top = non_portfolio[: TOP_N - len(portfolio_entries)]
 
     seen = {e["ticker"] for e in top}
     for e in portfolio_entries:

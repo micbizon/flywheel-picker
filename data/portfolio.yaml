@@ -1,27 +1,6 @@
 meta:
   currency: PLN
-  last_updated: "2025-01-15"
+  last_updated: "2026-01-15"
   total_invested_pln: 50000
 
-positions:
-  - ticker: DUOL
-    entry_price: 250.00
-    entry_price_currency: USD
-    entry_date: "2025-11-01"
-    current_weight_pct: 20
-    decision_id:
-  - ticker: RDW
-    entry_price: 9.50
-    entry_price_currency: USD
-    entry_date: "2025-11-01"
-    current_weight_pct: 10
-    decision_id:
-  - ticker: HIMS
-    entry_price: 30.00
-    entry_price_currency: USD
-    entry_date: "2025-11-01"
-    current_weight_pct: 10
-    decision_id:
-  
-
-cash_pct: 60.0
+cash_pct: 100.0

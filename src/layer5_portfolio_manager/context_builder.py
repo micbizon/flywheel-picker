@@ -46,9 +46,7 @@ def _consensus_section(layer4: dict) -> str:
 def build_context(ticker: str, layer2: dict, layer4: dict) -> str:
     price_ctx = get_price_context(ticker)
     decisions_with_feedback = [
-        d
-        for d in load_decisions_log()
-        if d.get("feedback_6m") is not None or d.get("feedback_12m") is not None
+        d for d in load_decisions_log() if d.get("feedback_6m") is not None or d.get("feedback_12m") is not None
     ]
     decisions_with_feedback.sort(key=lambda d: d.get("date", ""), reverse=True)
     recent_feedback = decisions_with_feedback[:10]

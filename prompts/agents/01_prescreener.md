@@ -7,6 +7,7 @@ czy spółka [TICKER] spełnia strukturalne warunki flywheel'u opisane powyżej.
 
 Odpowiedz na każde z 4 kryteriów: TAK / NIE / BRAK_DANYCH + jedno zdanie uzasadnienia.
 Następnie wydaj werdykt:
+
 - PASS: minimum 2 kryteria TAK
 - CONDITIONAL_PASS: 1 kryteria TAK, reszta BRAK_DANYCH
 - REJECT: brak kryteria TAK

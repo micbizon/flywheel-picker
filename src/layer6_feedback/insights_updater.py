@@ -26,8 +26,7 @@ def update_system_insights(feedback_result: dict) -> None:
         patterns: list = insights.setdefault("assumption_patterns", [])
         pattern_lower = pattern.lower()
         already_exists = any(
-            pattern_lower in existing.lower() or existing.lower() in pattern_lower
-            for existing in patterns
+            pattern_lower in existing.lower() or existing.lower() in pattern_lower for existing in patterns
         )
         if not already_exists:
             patterns.append(pattern)

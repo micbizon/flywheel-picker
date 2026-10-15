@@ -1,5 +1,4 @@
 import logging
-from datetime import date
 
 from layer0_ideas.insider_buying import fetch_insider_buys
 from layer0_ideas.screener import fetch_screener_candidates
@@ -9,32 +8,13 @@ logger = logging.getLogger(__name__)
 
 
 def run_idea_generation() -> None:
-    watchlist = load_watchlist()
-    existing = {entry["ticker"] for entry in watchlist["tickers"] if isinstance(entry, dict)}
+    existing = set(load_watchlist())
 
     insider_tickers = fetch_insider_buys()
     if not insider_tickers:
         logger.info("idea_generation: insider_buying niedostępny — używam tylko screener")
     screener_tickers = fetch_screener_candidates()
 
-    today = date.today().isoformat()
-    added = 0
-
-    for ticker in insider_tickers:
-        if ticker not in existing:
-            watchlist["tickers"].append(
-                {"ticker": ticker, "source": "insider_buying", "discovery_date": today}
-            )
-            existing.add(ticker)
-            added += 1
-
-    for ticker in screener_tickers:
-        if ticker not in existing:
-            watchlist["tickers"].append(
-                {"ticker": ticker, "source": "screener", "discovery_date": today}
-            )
-            existing.add(ticker)
-            added += 1
-
-    save_watchlist(watchlist)
-    logger.info(f"idea_generation: added {added} new tickers to watchlist")
+    new_tickers = [t for t in insider_tickers + screener_tickers if t not in existing]
+    save_watchlist(sorted(existing | set(new_tickers)))
+    logger.info(f"idea_generation: added {len(new_tickers)} new tickers to watchlist")

@@ -43,9 +43,7 @@ def get_price_context(ticker: str) -> str:
         if vol_ratio is not None:
             lines.append(f"Wolumen dziś vs średnia: {vol_ratio:.1f}x")
 
-        return (
-            "\nAKTUALNE DANE RYNKOWE (pobrane w czasie rzeczywistym):\n" + "\n".join(lines) + "\n"
-        )
+        return "\nAKTUALNE DANE RYNKOWE (pobrane w czasie rzeczywistym):\n" + "\n".join(lines) + "\n"
     except Exception as e:
         logger.warning(f"get_price_context({ticker}) failed: {e}")
         return ""

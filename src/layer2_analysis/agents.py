@@ -33,9 +33,7 @@ def run_fundamental(ticker: str, name_ctx: str) -> dict:
 
 
 def run_technical(ticker: str, name_ctx: str, price_ctx: str) -> dict:
-    result = call_llm(
-        _load_prompt("02b_technical.md", ticker, price_ctx, company_name_context=name_ctx)
-    )
+    result = call_llm(_load_prompt("02b_technical.md", ticker, price_ctx, company_name_context=name_ctx))
     result["ticker"] = ticker
     log_agent_result(ticker, "technical", result)
     return result

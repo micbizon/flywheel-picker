@@ -37,6 +37,7 @@ Zwróć wyłącznie JSON:
 }
 
 Zasady wypełnienia:
+
 - failure_scenarios: top 5 po deduplikacji i rankingu skumulowanym
 - top_blind_spot: scenariusz z PRZEOCZONE RYZYKA lub najwyżej rankowany jeśli brak przeoczonych
 - raw_analysis: krótkie podsumowanie procesu syntezy

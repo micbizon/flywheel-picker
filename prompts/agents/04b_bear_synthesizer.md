@@ -33,4 +33,5 @@ Zwróć wyłącznie JSON:
 }
 
 Zasady wypełnienia:
+
 - raw_analysis: narracja z kroku 4 (SYNTETYCZNY BEAR CASE)

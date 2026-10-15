@@ -208,20 +208,17 @@ Dodanie zmiennej środowiskowej `ANTHROPIC_TEMPERATURE`, która jest ładowna w 
 
 ---
 
-
 ## 2026-04-19 — TASK-019: Naprawa logiki akcji portfolio managera
 
 W `context_builder.py` dodano `_position_section(ticker, portfolio)` która odczytuje `current_weight_pct` z portfolio.yaml i buduje jawny blok "POZYCJA W PORTFELU: TAK/NIE, Aktualny rozmiar: X%" — sekcja trafia do `build_context()` jako nowy element przed danymi L2/L4. W `05_portfolio_manager.md` zastąpiono ogólną listę akcji 3-krokowymi ZASADAMI WYBORU AKCJI z zakazami NIGDY, a w JSON schema `position_size_pct` rozdzielono na `current_position_size_pct` i `target_position_size_pct`. W `_build_decision_payload()` w `main.py` zaktualizowano mapowanie pól z `pm_result`. W `config/decisions_log.yaml` dokonano rename pola we wszystkich wpisach DEC-001…DEC-005 z semantycznym rozróżnieniem (BUY: current=0, target=10; SELL/HOLD: oba=0). Poprawiono też log w `orchestrator.py` pokazujący current→target dla każdego tickera.
 
 ---
 
-
 ## 2026-04-19 — TASK-018: Centralny system logowania
 
 Stworzono `src/shared/logging_config.py` z `setup_logging()` (StreamHandler + `TimedRotatingFileHandler` na `logs/pipeline.log`, rotacja midnight, backupCount=30, czyszczenie plików decisions starszych niż 90 dni) i `get_decision_logger(ticker)` (idempotentny logger per ticker+dzień, `propagate=False`, zapis do `logs/decisions/YYYY-MM-DD_{ticker}.log`). W `pipeline/main.py` dodano wywołanie `setup_logging()` na początku `main()`. We wszystkich plikach `src/` zastąpiono `print()` przez `logger = logging.getLogger(__name__)` z mapowaniem: postęp → `info`, retry → `warning`, błędy parsowania → `error`, prompty i raw responses → `debug`. W agentach warstwy 2, 4 i 5 dodano `get_decision_logger` z logowaniem score/verdict (info) i raw_analysis (debug, bez obcinania). Naprawiono błąd składni Python 2 w `llm_client.py` (`except json.JSONDecodeError, ValueError` → `except (json.JSONDecodeError, ValueError)`). Dodano `LOG_LEVEL=INFO` do `.env`.
 
 ---
-
 
 ## 2026-04-19 — TASK-017: Przekazywanie aktualnych cen rynkowych do agentów
 
@@ -259,20 +256,17 @@ Usunięto `position_sizing.py` w całości. Z `context_builder.py` usunięto imp
 
 ---
 
-
 ## 2026-04-18 — TASK-010: Wyodrębnienie call_llm do współdzielonego modułu
 
 Stworzono `/src/shared/llm_client.py` z funkcjami `_call_claude`, `_call_ollama`, `_safe_parse_json` (json.loads → repair_json → ValueError) i publicznym `call_llm(prompt, expect_json=True)` który wybiera backend z `get_llm_config()`. Usunięto lokalne implementacje z warstw 1, 2, 4, 5 i 6 — każdy agent importuje teraz tylko `call_llm`. Grep na `ollama_base_url` zwraca wyłącznie `llm_client.py` i `config_loader.py`.
 
 ---
 
-
 ## 2026-04-18 — TASK-009: Warstwa 0 — Idea Generation (automatyczny watchlist)
 
 `fetch_insider_buys()` w `insider_buying.py` pobiera CSV z OpenInsider przez `httpx`, filtruje transakcje typu P dla ról CEO/CFO/Director z wartością ≥ $100K i weryfikuje market cap $100M–$25B przez `yfinance.fast_info`. `fetch_screener_candidates()` w `screener.py` pobiera CSV z Finviz export z filtrami `cap_small,cap_mid,iown_o10`, następnie weryfikuje revenue growth YoY ≥ 15% przez `yfinance.financials`. `run_idea_generation()` w `aggregator.py` łączy oba źródła, deduplikuje względem istniejących wpisów w watchlist.yaml i dopisuje nowe jako `{ticker, source, discovery_date}` — format zgodny z `t["ticker"]` używanym przez orchestrator. Dodano `yfinance` do zależności przez `uv add`.
 
 ---
-
 
 ## 2026-04-18 — TASK-008: Pipeline — Orchestrator łączący wszystkie warstwy
 

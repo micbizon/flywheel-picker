@@ -6,7 +6,7 @@ Multi-agentowy pipeline do identyfikacji i analizy spółek z kapitalizacją $2b
 
 ## Pipeline
 
-```
+```text
 Warstwa 0: Idea Generation      — Finviz screeners, insider buying, 13F filings
 Warstwa 1: Pre-Screener         — Filtr Costco Algorithm (PASS / CONDITIONAL / REJECT)
 Warstwa 2: Równoległa analiza   — Fundamental · Technical · Sentiment · Ownership (4 agenty)

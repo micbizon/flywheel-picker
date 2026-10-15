@@ -4,6 +4,7 @@ Szukamy spółek z mechanicznym flywheel'em: wzrost skali → niższe koszty jed
 → wyższa wartość dla klienta → więcej klientów → wzrost skali.
 
 Spółka przechodzi ocenę jeśli spełnia minimum 3 z 5 kryteriów:
+
 1. Wzrost skali mechanicznie obniża koszt jednostkowy (nie tylko rozkłada koszty stałe)
 2. Retencja klientów niezależna od ceny (nawyk, switching cost, network effect)
 3. TAM wystarczający na 7+ lat wzrostu przy niskiej obecnej penetracji

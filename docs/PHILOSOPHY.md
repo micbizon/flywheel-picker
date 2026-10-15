@@ -18,7 +18,7 @@ akumulowania marży.
 
 Efektem jest **flywheel** (koło zamachowe):
 
-```
+```text
 Więcej klientów
       ↑                    ↓
 Lepsza wartość        Większa skala
@@ -36,6 +36,7 @@ Dlatego spółki które naprawdę to robią są rzadkie i warte premii.
 
 Costco jest modelowym przykładem tej strategii w świecie fizycznym. Firma celowo ogranicza
 marże detaliczne do ~11–13% (gdy konkurencja bierze 25–50%), kompensując to przez:
+
 - Membership fee jako stabilny przychód niezależny od marży na produktach
 - Obsesję na rotacji zapasów (wyższe obroty = gotówka pracuje szybciej)
 - Eliminację kosztów które nie dostarczają wartości klientowi (marketing, opakowania, wybór SKU)
@@ -50,6 +51,7 @@ Costco Algorithm **nie jest strategią niskich cen**. Jest strategią **maksymal
 per wydany dolar klienta**, finansowaną przez efekty skali.
 
 To fundamentalna różnica:
+
 - Strategia niskich cen: obniżam cenę kosztem jakości lub kosztem dostawców
 - Costco Algorithm: obniżam cenę PONIEWAŻ jestem bardziej efektywny niż konkurencja,
   a efektywność rośnie wraz ze skalą
@@ -100,6 +102,7 @@ formą edukacji i rozrywki po 18:00).
 reinwestowania zamiast ekspansji marży?**
 
 To jest najtrudniejszy do zweryfikowania punkt. Sygnały pozytywne:
+
 - Founder-led (założyciel ma skin in the game i długoterminową wizję)
 - Wynagrodzenia powiązane z NPS/retencją/wzrostem użytkowników, nie tylko EPS
 - Historyczne decyzje capital allocation: reinwestycje > buybacks > dywidendy
@@ -113,6 +116,7 @@ To jest najtrudniejszy do zweryfikowania punkt. Sygnały pozytywne:
 Nie każdy flywheel jest taki sam. System rozpoznaje cztery architektury:
 
 ### Archetype A: Scale Economies Flywheel (fizyczny)
+
 *Wzorzec: Costco, Amazon Retail*
 
 Mechanizm: fizyczna lub logistyczna skala obniża koszt na jednostkę.
@@ -123,6 +127,7 @@ Sygnały do szukania: rosnące udziały w rynku przy stabilnych lub lekko malej�
 poprawa cyklu konwersji gotówki, rosnąca siła negocjacyjna z dostawcami.
 
 ### Archetype B: Zero Marginal Cost Flywheel (cyfrowy)
+
 *Wzorzec: Duolingo, Netflix (content amortyzowany), Spotify*
 
 Mechanizm: koszt obsługi kolejnego użytkownika ≈ 0 po przekroczeniu masy krytycznej.
@@ -134,6 +139,7 @@ Sygnały do szukania: marże brutto > 60% i rosnące, CAC malejący przy rosnąc
 reinwestycja w R&D i content zamiast w margin expansion.
 
 ### Archetype C: Data / Intelligence Flywheel
+
 *Wzorzec: Tempus AI, palantir w pewnym sensie, dobre AI spółki B2B*
 
 Mechanizm: więcej użytkowników → więcej danych → lepszy model/algorytm → lepsza wartość
@@ -148,6 +154,7 @@ Sygnały do szukania: unikalność i defensywność źródeł danych, rosnąca l
 na tym samym datasecie, Net Revenue Retention > 120%.
 
 ### Archetype D: Marketplace / Network Effects Flywheel
+
 *Wzorzec: klasyczne platformy, ale też niche B2B marketplaces*
 
 Mechanizm: każdy nowy uczestnik po obu stronach rynku zwiększa wartość dla wszystkich.
@@ -168,6 +175,7 @@ Równie ważne jak kryteria pozytywne.
 ### Value traps
 
 Spółka tania na mnożnikach ale:
+
 - Biznes strukturalnie się psuje (revenue declining, market share losing)
 - Zarząd nie ma planu — tylko buybacks finansowane z ostatnich rezerw gotówki
 - Branża w sekularne schyłku (nie cyklicznym — sekularne jest nieodwracalne)
@@ -290,21 +298,25 @@ niż kurs akcji jako wskaźnik czy teza jest nadal aktualna.
 ### Metryki specyficzne dla archetypów
 
 **Archetype A (fizyczny):**
+
 - Inventory turnover (im wyższy tym lepszy)
 - Gross margin per square foot / per employee
 - Supplier concentration (malejąca = rosnąca siła negocjacyjna)
 
 **Archetype B (zero marginal cost):**
+
 - DAU/MAU ratio (engagement depth)
 - Subscription renewal rate
 - Free-to-paid conversion rate
 
 **Archetype C (data/intelligence):**
+
 - Number of unique data sources
 - Model accuracy improvement YoY
 - Number of use cases per customer
 
 **Archetype D (marketplace):**
+
 - Take rate trend (rosnący = pricing power)
 - Liquidity metrics (fill rate, time to match)
 - Multi-homing rate (malejący = silniejszy lock-in)

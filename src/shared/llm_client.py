@@ -28,11 +28,7 @@ def _get_claude_client(cfg: dict) -> anthropic.Anthropic:
 
 
 def _call_claude(prompt: str, cfg: dict, model_tier: str = "analysis") -> str:
-    model = (
-        cfg["model_portfolio_manager"]
-        if model_tier == "portfolio_manager"
-        else cfg["model_analysis"]
-    )
+    model = cfg["model_portfolio_manager"] if model_tier == "portfolio_manager" else cfg["model_analysis"]
     client = _get_claude_client(cfg)
     kwargs = {
         "model": model,
@@ -46,15 +42,9 @@ def _call_claude(prompt: str, cfg: dict, model_tier: str = "analysis") -> str:
 
 
 def _call_openrouter(prompt: str, cfg: dict, model_tier: str = "analysis") -> str:
-    model = (
-        cfg["model_portfolio_manager"]
-        if model_tier == "portfolio_manager"
-        else cfg["model_analysis"]
-    )
+    model = cfg["model_portfolio_manager"] if model_tier == "portfolio_manager" else cfg["model_analysis"]
     chunks: list[str] = []
-    with httpx.Client(
-        timeout=httpx.Timeout(connect=30.0, read=600.0, write=600.0, pool=600.0)
-    ) as client:
+    with httpx.Client(timeout=httpx.Timeout(connect=30.0, read=600.0, write=600.0, pool=600.0)) as client:
         with client.stream(
             "POST",
             "https://openrouter.ai/api/v1/chat/completions",
@@ -82,11 +72,7 @@ def _call_openrouter(prompt: str, cfg: dict, model_tier: str = "analysis") -> st
 
 
 def _call_ollama(prompt: str, cfg: dict, model_tier: str = "analysis") -> str:
-    model = (
-        cfg["model_portfolio_manager"]
-        if model_tier == "portfolio_manager"
-        else cfg["model_analysis"]
-    )
+    model = cfg["model_portfolio_manager"] if model_tier == "portfolio_manager" else cfg["model_analysis"]
     response = httpx.post(
         f"{cfg['base_url']}/api/generate",
         json={"model": model, "prompt": prompt, "format": "json", "stream": False},
@@ -146,11 +132,7 @@ def count_prompt_tokens(prompt: str, model_tier: str = "analysis") -> int:
     cfg = get_llm_config()
     if cfg["provider"] != "claude":
         return len(prompt) // 4
-    model = (
-        cfg["model_portfolio_manager"]
-        if model_tier == "portfolio_manager"
-        else cfg["model_analysis"]
-    )
+    model = cfg["model_portfolio_manager"] if model_tier == "portfolio_manager" else cfg["model_analysis"]
     client = _get_claude_client(cfg)
     response = client.messages.count_tokens(
         model=model,
@@ -159,9 +141,7 @@ def count_prompt_tokens(prompt: str, model_tier: str = "analysis") -> int:
     return response.input_tokens
 
 
-def call_llm(
-    prompt: str, expect_json: bool = True, model_tier: str = "analysis"
-) -> str | dict | list:
+def call_llm(prompt: str, expect_json: bool = True, model_tier: str = "analysis") -> str | dict | list:
     cfg = get_llm_config()
     logger.debug(f"Prompt:\n{prompt}")
     _callers = {

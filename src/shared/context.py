@@ -12,7 +12,5 @@ def read_template(path: Path) -> str:
 
 def load_core_rules() -> str:
     return (
-        read_template(PROMPTS_DIR / "CORE_RULES.md")
-        + "\n"
-        + read_template(PROMPTS_DIR / "RESPONSE_RULES.md")
+        read_template(PROMPTS_DIR / "CORE_RULES.md") + "\n" + read_template(PROMPTS_DIR / "RESPONSE_RULES.md")
     ).replace("{{ CURRENT_DATE }}", date.today().isoformat())

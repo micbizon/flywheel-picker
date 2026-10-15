@@ -35,6 +35,7 @@ Zwróć wyłącznie JSON:
 }
 
 Zasady wypełnienia:
+
 - key_assumptions: tylko te z sekcji KONSENSUS
 - underappreciated_factor: najlepszy sygnał z UNIKALNE SYGNAŁY oznaczony WARTO_ZBADAĆ (lub null jeśli brak)
 - raw_analysis: narracja z kroku 4 (SYNTETYCZNY BULL CASE)

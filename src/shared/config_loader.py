@@ -16,14 +16,6 @@ load_dotenv()
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 
 
-def _sort_watchlist(data: dict) -> dict:
-    if "tickers" in data and isinstance(data["tickers"], list):
-        data["tickers"] = sorted(
-            data["tickers"], key=lambda t: t["ticker"] if isinstance(t, dict) else t
-        )
-    return data
-
-
 def _load_available_tickers() -> frozenset[str] | None:
     if not _AVAILABLE_TICKERS_PDF.exists():
         return None
@@ -50,33 +42,25 @@ def load_broker_tickers() -> list[str]:
     return sorted(available)
 
 
-def load_watchlist() -> dict:
+def load_watchlist() -> list[str]:
     path = DATA_DIR / "watchlist.yaml"
     if not path.exists():
-        return {"tickers": []}
+        return []
     data = load_yaml(path)
-    if "tickers" not in data:
-        data["tickers"] = []
+    tickers = data.get("tickers") or []
 
     available = _load_available_tickers()
     if available is not None:
-        original = {t["ticker"] if isinstance(t, dict) else t for t in data["tickers"]}
-        data["tickers"] = [
-            t for t in data["tickers"] if (t["ticker"] if isinstance(t, dict) else t) in available
-        ]
-        removed_tickers = sorted(
-            original - {t["ticker"] if isinstance(t, dict) else t for t in data["tickers"]}
-        )
-        if removed_tickers:
-            logger.warning(
-                f"load_watchlist: usunięto {len(removed_tickers)} tickerów spoza available-tickers.pdf: {removed_tickers}"
-            )
+        removed = sorted(t for t in tickers if t not in available)
+        if removed:
+            logger.warning(f"load_watchlist: usunięto {len(removed)} tickerów spoza available-tickers.pdf: {removed}")
+        tickers = [t for t in tickers if t in available]
 
-    return _sort_watchlist(data)
+    return sorted(tickers)
 
 
-def save_watchlist(data: dict) -> None:
-    save_yaml(DATA_DIR / "watchlist.yaml", _sort_watchlist(data))
+def save_watchlist(tickers: list[str]) -> None:
+    save_yaml(DATA_DIR / "watchlist.yaml", {"tickers": sorted(tickers)})
 
 
 def load_yaml(path: str | Path) -> dict:
@@ -122,9 +106,7 @@ def get_llm_config() -> dict:
             "api_key": api_key,
             "temperature": float(os.getenv("LLM_TEMPERATURE")) if os.getenv("LLM_TEMPERATURE") else None,
             "model_analysis": os.getenv("LLM_MODEL_ANALYSIS", "claude-haiku-4-5-20251001"),
-            "model_portfolio_manager": os.getenv(
-                "LLM_MODEL_PORTFOLIO_MANAGER", "claude-haiku-4-5-20251001"
-            ),
+            "model_portfolio_manager": os.getenv("LLM_MODEL_PORTFOLIO_MANAGER", "claude-haiku-4-5-20251001"),
         }
 
     if provider == "openrouter":

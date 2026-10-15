@@ -1,120 +1,66 @@
 decisions:
 - decision_id: DEC-001
-  date: '2026-04-25'
-  ticker: DUOL
-  action: HOLD
-  current_position_size_pct: 20
-  target_position_size_pct: 20
-  entry_price: 250.0
-  entry_price_currency: USD
-  rationale: 'Teza bez zmian: flywheel 3/5 kryteriów, +35% YoY, FCF $265M — brak nowych
-    danych falsyfikujących od daty wejścia, ale cena -81% od szczytu i brak potwierdzenia
-    wolumenowego wykluczają ADD. Główne ryzyko: AI Big Tech eliminuje willingness-to-pay
-    $84/rok przy dystrybucji 3B urządzeń i $0 CAC — probability HIGH w pre-mortem.
-    Musi być prawdą: Q2 2025 (2025-08-06) pokazuje konwersję free→paid >8% MAU i MAU
-    >125M, inaczej teza wymaga ponownej oceny od zera.'
-  stop_loss_price: 87.89
-  stop_loss_fundamental: Konwersja free→paid spada poniżej 8% przez 2 kolejne kwartały
-    LUB FCF TTM spada poniżej $200M.
-  checkin_1yr_criteria: MAU >140M (Q4 2025), ARPU >$19 TTM, FCF margin >15% — wszystkie
-    trzy muszą być spełnione jednocześnie.
-  feedback_6m: null
-  feedback_12m: null
+  date: '2026-04-28'
+  ticker: NET
+  action: BUY
+  current_position_size_pct: 0
+  target_position_size_pct: 15
+  entry_price: 212.0
+  rationale: 'Pytanie 1: TAK — sieć 300+ PoP tworzy mechaniczny flywheel: każdy nowy
+    węzeł obniża koszt rutu i latencję dla 100% klientów bez proporcjonalnego wzrostu
+    COGS. 100B+ zdarzeń/dobę trenuje modele ML, switching cost rośnie z każdą integracją
+    Zero Trust. Pytanie 2: TAK — upside 1.8x ($380 target) — poniżej progu 2x, ale
+    RPO +33% YoY i NRR 116-125% sugerują, że scenariusz bazowy jest konserwatywny;
+    przy re-akceleracji do +32% YoY upside przekracza 2x. Pytanie 3: TAK — bull case
+    silniejszy: mechaniczny flywheel sieciowy potwierdzony empirycznie, TAM $100B+
+    przy penetracji <3%, RPO $1.7B jako widoczność przychodów. Bear case (PANW bundling,
+    re-rating) realny, ale NRR 116-125% nie sygnalizuje jeszcze erozji. Najsilniejszy
+    bull vs bear spośród kandydatów BUY.'
+  stop_loss_price: 170.0
+  stop_loss_fundamental: NRR spada poniżej 110% przez 2 kolejne kwartały LUB przychody
+    <22% YoY przez 2 kolejne kwartały LUB AWS/Azure bundled SASE pojawia się w >5%
+    RFP enterprise bez dopłat.
+  checkin_1yr_criteria: Przychody ≥25% YoY w Q4 2025 i Q1 2026; NRR ≥115% przez 4
+    kolejne kwartały; FCF margin ≥18% do końca 2026; RPO wzrost ≥30% YoY.
 - decision_id: DEC-002
-  date: '2026-04-25'
+  date: '2026-04-28'
   ticker: DUOL
   action: HOLD
-  current_position_size_pct: 20
-  target_position_size_pct: 20
+  current_position_size_pct: 10
+  target_position_size_pct: 10
   entry_price: 250.0
-  entry_price_currency: USD
-  rationale: 'Matryca: flywheel=3/5, bull=7.2, bear=3.0, upside=3.0x ($310/$103.45),
-    HIGH_risks=2 (AI disruption + momentum rotation). Spółka W portfelu — stosuję
-    reguły HOLD/ADD/SELL. SELL: flywheel=3 >= 2 ✓ (nie spełnia warunku SELL), bear=3.0
-    <= 8 ✓ (nie spełnia warunku SELL) → brak triggera SELL. ADD: flywheel=3 < 4 ✗
-    → warunek ADD nie spełniony. Decyzja: HOLD. Pozycja 20% pozostaje bez zmian. Kontekst:
-    cena $103.45 to -81% od entry $250 — teza nie uległa zmianie strukturalnie (flywheel
-    3/5 utrzymany, FCF $265M TTM potwierdzony), ale dwa scenariusze HIGH-probability
-    (AI disruption + momentum rotation) blokują dokupowanie. Bear consensus HIGH przy
-    bull consensus HIGH tworzy sytuację wysokiej niepewności — nie jest to moment
-    na zwiększanie ekspozycji. Gotówka 80% pozostaje jako pozycja — brak warunków
-    do jej deploymentu w DUOL przy obecnych parametrach ryzyka.'
-  stop_loss_price: 87.89
-  stop_loss_fundamental: Sprzedaj jeśli DAU/MAU spadnie poniżej 0.26 przez 2 kolejne
-    kwartały LUB płatni subskrybenci rosną <10% YoY przy Q2 2025 earnings.
-  checkin_1yr_criteria: Płatni subskrybenci >12M (vs 9.5M dziś), przychody rosną >22%
-    YoY przez 2 kolejne kwartały, DAU/MAU utrzymuje >0.30.
-  feedback_6m: null
-  feedback_12m: null
+  rationale: 'Pytanie o flywheel: TAK — DAU +54% YoY przy AI-content skalującym bez
+    liniowego wzrostu COGS, streak mechanics tworzą behawioralny switching cost potwierdzony
+    DAU/MAU 30% vs branżowe 15-20%. Teza nie osłabła — flywheel działa. Bear case
+    (ChatGPT/Gemini substytucja) jest realny i HIGH-probability, ale nie zmaterializował
+    się: paying subscribers nadal rosną, Duolingo Max w fazie wczesnej adopcji. Cena
+    -58% od wejścia odzwierciedla re-rating wyceny, nie fundamentalne złamanie tezy.
+    Nie uśredniam w dół — teza nie osłabła, ale nie jest wyraźnie silniejsza niż przy
+    wejściu. HOLD do potwierdzenia lub falsyfikacji: paying subscribers wzrost <10%
+    YoY przez 2 kwartały przy rosnącym DAU = SELL.'
+  stop_loss_price: 87.5
+  stop_loss_fundamental: Paying subscribers wzrost <10% YoY przez 2 kolejne kwartały
+    przy DAU rosnącym >20% (dywergencja = substytucja monetyzacji) LUB DAU/MAU spada
+    poniżej 25% przez 2 kolejne kwartały.
+  checkin_1yr_criteria: DAU ≥145M w Q4 2025; Paying subscribers wzrost ≥25% YoY; Gross
+    margin ≥70%; Duolingo Max penetracja >10% płatnych subskrybentów.
 - decision_id: DEC-003
-  date: '2026-04-25'
+  date: '2026-04-28'
   ticker: HIMS
   action: HOLD
   current_position_size_pct: 10
   target_position_size_pct: 10
   entry_price: 30.0
-  entry_price_currency: USD
-  rationale: 'Matryca: flywheel=3/5, bull=7.2, bear=7.2 (score 72/10=7.2), upside=78/30.56=2.55x,
-    HIGH_risks=1. SPÓŁKA W PORTFELU — zasady SELL/ADD/HOLD. SELL: flywheel=3 (nie
-    <2) ✓ pozostaje, bear_score=7.2 (nie >8) ✓ pozostaje. ADD: flywheel=3 (wymaga
-    >=4) ✗ — warunek niespełniony, bull=7.2 (wymaga >=8) ✗ — warunek niespełniony,
-    bear=7.2 (wymaga <=3) ✗ — warunek niespełniony. Wynik: HOLD. Bear consensus HIGH
-    przy bear_score 7.2 i jednym scenariuszu HIGH probability (FDA ban GLP-1) blokuje
-    ADD. Teza częściowo intaktna — flywheel subskrypcyjny działa, ale koncentracja
-    regulacyjna na compounded semaglutide pozostaje nierozwiązana do wyroku Q2-Q3
-    2025. Pozycja 10% adekwatna jako próbna przy tej niepewności.'
+  rationale: 'Pytanie o flywheel: TAK częściowo — subskrypcja tworzy nawyk, CAC amortyzuje
+    się na 2M+ subskrybentów, retencja 80%/12M potwierdzona. Teza nie osłabła strukturalnie
+    — ryzyko FDA/GLP-1 było znane przy wejściu i jest wycenione w -58% od ATH. Segment
+    non-GLP-1 (~60% bazy) rośnie ~20% YoY, gotówka netto $543M daje runway. Bear case
+    (wyrok sądowy Q3 2025) jest HIGH-probability i binarny — to główne ryzyko do monitorowania.
+    Nie uśredniam w dół — teza nie osłabła, ale niepewność regulacyjna nie pozwala
+    na ADD. HOLD do rozstrzygnięcia wyroku sądowego Q3 2025.'
   stop_loss_price: 13.74
-  stop_loss_fundamental: Sprzedaj jeśli revenue Q3 2026 spadnie poniżej $600M LUB
-    subscriber growth spadnie poniżej 15% YoY przez 2 kolejne kwartały po wyroku FDA.
-  checkin_1yr_criteria: 1) Subskrybenci >3M do Q4 2025 przy churn <15% QoQ po wyroku
-    FDA. 2) Non-GLP-1 revenue >60% całkowitych przychodów przy utrzymaniu FCF dodatniego.
-    3) S&M jako % revenue spada poniżej 55% przy subscriber growth >20% YoY.
-  feedback_6m: null
-  feedback_12m: null
-- decision_id: DEC-004
-  date: '2026-04-25'
-  ticker: RDW
-  action: SELL
-  current_position_size_pct: 10
-  target_position_size_pct: 0
-  entry_price: 9.5
-  entry_price_currency: USD
-  rationale: 'Matryca: flywheel=1/5, bull=5.5, bear=8.2, upside=2.27x (22/9.68), HIGH_risks=2.
-    Spółka W portfelu — reguła SELL: flywheel_criteria_met=1 < 2 (warunek wystarczający
-    do SELL). Dodatkowo bear_score=8.2 zbliża się do progu >8. Teza flywheel strukturalnie
-    fałszywa: gross margin 9.2% w modelu hardware kontraktowym nie skaluje się mechanicznie,
-    FCF -$120M TTM przy gotówce $29M oznacza deterministyczną dylukcję w <3 miesiące,
-    insider ownership 1.5% eliminuje hamulec zarządczy. Dwa scenariusze HIGH probability
-    (dylukcja spiralna + brak skalowalności marży) potwierdzają osłabienie tezy —
-    nie ceny, lecz fundamentów. Decyzja mechaniczna zgodna z regułą: flywheel < 2
-    = SELL.'
-  stop_loss_price: 0.0
-  stop_loss_fundamental: Sprzedaj natychmiast przy ogłoszeniu emisji akcji lub ATM
-    facility przy cenie <$8 i gotówce <$50M.
-  checkin_1yr_criteria: Gross margin >18% przez 2 kolejne kwartały, FCF breakeven
-    osiągnięty bez emisji >10% float, backlog YoY wzrost >20%.
-  feedback_6m: null
-  feedback_12m: null
-- decision_id: DEC-005
-  date: '2026-04-25'
-  ticker: DUOL
-  action: HOLD
-  current_position_size_pct: 20
-  target_position_size_pct: 20
-  entry_price: 250.0
-  entry_price_currency: USD
-  rationale: 'Matryca: flywheel=3/5, bull=7.5, bear=3, upside=3.0x (310/103.45), HIGH_risks=1.
-    Spółka W portfelu — stosuję reguły SELL/ADD/HOLD. SELL: flywheel=3 >= 2 (nie spełniony
-    warunek SELL) i bear=3 <= 8 (nie spełniony warunek SELL) → brak podstaw do sprzedaży.
-    ADD: flywheel=3 < 4 (warunek ADD niespełniony) → brak podstaw do dokupienia. Wynik:
-    HOLD. Teza fundamentalna nie osłabła — flywheel retencji (DAU/MAU 37%) i wzrost
-    revenue +35% YoY pozostają nienaruszone. Cena -58.6% od wejścia to zmiana ceny,
-    nie tezy. Jeden scenariusz HIGH probability (AI native competitors eliminują moat)
-    jest monitorowany przez wskaźnik DAU/MAU >30%.'
-  stop_loss_price: 87.5
-  stop_loss_fundamental: Sprzedaj jeśli DAU/MAU spadnie poniżej 30% przez 2 kolejne
-    kwartały LUB revenue wzrost spadnie poniżej 20% YoY przez 2 kolejne kwartały.
-  checkin_1yr_criteria: DAU/MAU ratio >= 34%, subscriber net adds >= 300K QoQ, gross
-    margin >= 68% przy wzroście subskrybentów Duolingo Max.
-  feedback_6m: null
-  feedback_12m: null
+  stop_loss_fundamental: Przegrana w sądzie pierwszej instancji bez zawieszenia wykonania
+    LUB FDA enforcement letters powodujące spadek wolumenu recept GLP-1 >30% MoM LUB
+    retencja 12-miesięczna spada poniżej 70%.
+  checkin_1yr_criteria: Segment non-GLP-1 wzrost ≥15% YoY w Q4 2025; retencja subskrybentów
+    ≥75% po 12 miesiącach; gotówka netto ≥$400M; rozstrzygnięcie wyroku sądowego GLP-1.

@@ -1,4 +1,5 @@
 ZASADY ODPOWIEDZI:
+
 - Każde pole tekstowe: maksymalnie 2 zdania lub 30 słów
 - Używaj liczb zamiast przymiotników: nie "silny wzrost" lecz "+34% YoY"
 - Zero wstępów i podsumowań

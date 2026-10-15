@@ -17,9 +17,7 @@ def _portfolio_section(portfolio: dict) -> str:
 
 def _decisions_feedback_section() -> str:
     decisions = [
-        d
-        for d in load_decisions_log()
-        if d.get("feedback_6m") is not None or d.get("feedback_12m") is not None
+        d for d in load_decisions_log() if d.get("feedback_6m") is not None or d.get("feedback_12m") is not None
     ]
     decisions.sort(key=lambda d: d.get("date", ""), reverse=True)
     return json.dumps(decisions[:10], ensure_ascii=False, indent=2)
@@ -109,12 +107,8 @@ def build_allocator_context(
 ) -> str:
     by_ticker: dict[str, Any] = {c["ticker"]: c for c in candidates}
 
-    portfolio_entries = [
-        r for r in phase1_results if by_ticker.get(r["ticker"], {}).get("in_portfolio")
-    ]
-    buy_candidates = [
-        r for r in phase1_results if not by_ticker.get(r["ticker"], {}).get("in_portfolio")
-    ]
+    portfolio_entries = [r for r in phase1_results if by_ticker.get(r["ticker"], {}).get("in_portfolio")]
+    buy_candidates = [r for r in phase1_results if not by_ticker.get(r["ticker"], {}).get("in_portfolio")]
 
     def fmt(r: dict) -> str:
         return _format_allocator_ticker(r, by_ticker.get(r["ticker"], {}))

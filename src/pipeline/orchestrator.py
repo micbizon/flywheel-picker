@@ -51,17 +51,10 @@ def run_pipeline(tickers: list[str] | None = None, run_l5: bool = False) -> None
     run_id = today_run_id()
     cp = load_checkpoint(run_id)
     if cp:
-        logger.info(
-            f"Wznawianie pipeline z checkpointu {run_id}: dostępne etapy: {list(cp.keys())}"
-        )
+        logger.info(f"Wznawianie pipeline z checkpointu {run_id}: dostępne etapy: {list(cp.keys())}")
 
     if tickers is None:
-        watchlist = load_watchlist()
-        tickers = (
-            [t["ticker"] for t in watchlist.get("tickers", [])]
-            if isinstance(watchlist.get("tickers"), list)
-            else []
-        )
+        tickers = load_watchlist()
 
     portfolio = load_portfolio()
     portfolio_tickers = {p["ticker"] for p in portfolio.get("positions", [])}

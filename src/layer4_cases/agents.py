@@ -67,9 +67,7 @@ def _run_bear_single(ticker: str, layer2_context: dict, price_ctx: str) -> dict:
 
 def _run_premortem_single(ticker: str, layer2_context: dict) -> dict:
     future_year = datetime.now().year + 2
-    prompt = _load_prompt(
-        "04c_premortem.md", ticker, layer2_context, {"[FUTURE_YEAR]": future_year}
-    )
+    prompt = _load_prompt("04c_premortem.md", ticker, layer2_context, {"[FUTURE_YEAR]": future_year})
     result = call_llm(prompt)
     result["ticker"] = ticker
     log_agent_result(ticker, "premortem_instance", result)

@@ -32,6 +32,7 @@ Spółka przechodzi przez system tylko jeśli posiada strukturalne cechy flywhee
 ## Stack technologiczny
 
 Środowisko zarządzane przez `uv`. Backend LLM konfigurowany globalnie przez `USE_CLAUDE_API`:
+
 - `true` → Claude API (`claude-sonnet-4-6`)
 - `false` → Ollama (model z `OLLAMA_MODEL_NAME`, domyślnie `llama3.2:3b`)
 
@@ -39,7 +40,7 @@ Spółka przechodzi przez system tylko jeśli posiada strukturalne cechy flywhee
 
 ## Architektura systemu — warstwy
 
-```
+```text
 ┌─────────────────────────────────────────────────────────┐
 │  WARSTWA 0: Idea Generation                             │
 │  Źródła: Finviz screeners, insider buying (OpenInsider) │
@@ -111,7 +112,7 @@ Spółka przechodzi przez system tylko jeśli posiada strukturalne cechy flywhee
 
 ## Struktura plików projektu
 
-```
+```text
 /flywheel-picker
 │
 ├── /docs
@@ -216,14 +217,17 @@ feedback_12m: null
 ## Źródła pomysłów na spółki (Warstwa 0)
 
 **Zaimplementowane:**
+
 - Finviz: market cap $2B+, revenue growth YoY > 15%, insider ownership > 10%
 - OpenInsider: insider buying CEO/CFO (aktualnie stub — endpoint niedostępny)
 
 **Planowane:**
+
 - 13F filings funduszy $50M–$500M AUM
 - SEC EDGAR: spin-offy i IPO z ostatnich 18 miesięcy
 
 **Human input:**
+
 - Ręczne dodanie do `watchlist.yaml` (Peter Lynch trigger)
 
 ---
